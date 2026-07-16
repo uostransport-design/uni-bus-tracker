@@ -1,0 +1,21 @@
+{
+  "name": "uni-bus-tracker",
+  "version": "1.0.0",
+  "description": "نظام تتبع حافلات الجامعة عبر GPS في الوقت الفعلي",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js",
+    "simulate": "node simulate_fleet.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
+    "socket.io": "^4.7.5"
+  }
+}

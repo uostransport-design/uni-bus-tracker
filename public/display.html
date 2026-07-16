@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>تتبع حافلات جامعة الشارقة</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="css/display.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo-badge">UOS</div>
+      <h1 data-i18n="title">تتبع حافلات جامعة الشارقة</h1>
+    </div>
+
+    <div class="top-controls">
+      <select id="station-filter"></select>
+      <span id="datetime" class="datetime"></span>
+      <button id="lang-toggle" class="lang-btn">EN</button>
+      <a href="/driver/login.html" class="ghost-link" data-i18n="driverLogin">دخول السائقين</a>
+      <a href="/admin/login.html" class="ghost-link" data-i18n="staffLogin">دخول الموظفين</a>
+    </div>
+  </header>
+
+  <div class="ticker-wrap" id="ticker-wrap">
+    <div class="ticker" id="ticker"></div>
+  </div>
+
+  <main class="layout">
+    <section id="map"></section>
+
+    <aside class="sidebar">
+      <h2 data-i18n="activeBuses">الحافلات النشطة</h2>
+      <div id="bus-list" class="bus-list"></div>
+    </aside>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/display.js"></script>
+</body>
+</html>

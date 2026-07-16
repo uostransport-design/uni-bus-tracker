@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>لوحة إدارة حافلات جامعة الشارقة</title>
+<link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+  <div class="app">
+    <nav class="sidenav">
+      <div class="brand">🚌 إدارة الحافلات</div>
+      <button class="nav-item active" data-tab="overview">نظرة عامة</button>
+      <button class="nav-item" data-tab="map">الخريطة الحية</button>
+      <button class="nav-item" data-tab="vehicles">المركبات</button>
+      <button class="nav-item" data-tab="stations">المحطات</button>
+      <button class="nav-item" data-tab="routes">المسارات</button>
+      <button class="nav-item" data-tab="drivers">السائقون</button>
+      <button class="nav-item" data-tab="alerts">التنبيهات</button>
+      <button class="nav-item" data-tab="announcements">الإعلانات</button>
+      <button class="nav-item" data-tab="incidents">البلاغات</button>
+      <button class="nav-item" data-tab="reports">التقارير</button>
+      <button class="nav-item" data-tab="users" id="nav-users">المستخدمون</button>
+      <button class="nav-item" data-tab="audit" id="nav-audit">سجل التدقيق</button>
+      <div class="spacer"></div>
+      <div class="user-box">
+        <div id="user-name">—</div>
+        <div id="user-role" class="role-badge">—</div>
+        <button id="change-pw-btn">تغيير كلمة المرور</button>
+        <button id="logout-btn">تسجيل الخروج</button>
+      </div>
+    </nav>
+
+    <main class="content">
+      <section id="tab-overview" class="tab active">
+        <h2>نظرة عامة</h2>
+        <div id="stats-grid" class="stats-grid"></div>
+      </section>
+
+      <section id="tab-map" class="tab">
+        <iframe src="/display.html" style="width:100%; height:100%; border:0"></iframe>
+      </section>
+
+      <section id="tab-vehicles" class="tab">
+        <div class="tab-header"><h2>المركبات (الحافلات)</h2><button class="btn-primary" id="btn-add-vehicle">+ إضافة حافلة</button></div>
+        <div id="form-vehicle" class="form-panel hidden"></div>
+        <div id="table-vehicles"></div>
+      </section>
+
+      <section id="tab-stations" class="tab">
+        <div class="tab-header"><h2>المحطات</h2><button class="btn-primary" id="btn-add-station">+ إضافة محطة</button></div>
+        <div id="form-station" class="form-panel hidden"></div>
+        <div id="table-stations"></div>
+      </section>
+
+      <section id="tab-routes" class="tab">
+        <div class="tab-header"><h2>المسارات</h2><button class="btn-primary" id="btn-add-route">+ إضافة مسار</button></div>
+        <div id="form-route" class="form-panel hidden"></div>
+        <div id="routes-list"></div>
+      </section>
+
+      <section id="tab-drivers" class="tab">
+        <div class="tab-header"><h2>السائقون</h2><button class="btn-primary" id="btn-add-driver">+ إضافة سائق</button></div>
+        <div id="form-driver" class="form-panel hidden"></div>
+        <div id="table-drivers"></div>
+      </section>
+
+      <section id="tab-alerts" class="tab">
+        <h2>التنبيهات</h2>
+        <div id="table-alerts"></div>
+      </section>
+
+      <section id="tab-announcements" class="tab">
+        <div class="tab-header"><h2>الإعلانات (تظهر في شاشات المحطات)</h2><button class="btn-primary" id="btn-add-announcement">+ إعلان جديد</button></div>
+        <div id="form-announcement" class="form-panel hidden"></div>
+        <div id="table-announcements"></div>
+      </section>
+
+      <section id="tab-incidents" class="tab">
+        <h2>بلاغات السائقين</h2>
+        <div id="table-incidents"></div>
+      </section>
+
+      <section id="tab-reports" class="tab">
+        <div class="tab-header"><h2>التقارير</h2><a class="btn-primary" id="export-csv" href="#" target="_blank" style="text-decoration:none">⬇ تصدير CSV / Excel</a></div>
+        <h3>ملخص آخر 7 أيام</h3>
+        <div id="table-summary"></div>
+        <h3>سجل الوصول للمحطات</h3>
+        <div id="table-arrivals"></div>
+      </section>
+
+      <section id="tab-users" class="tab">
+        <div class="tab-header"><h2>حسابات المستخدمين</h2><button class="btn-primary" id="btn-add-user">+ إضافة مستخدم</button></div>
+        <div id="form-user" class="form-panel hidden"></div>
+        <div id="table-users"></div>
+      </section>
+
+      <section id="tab-audit" class="tab">
+        <h2>سجل التدقيق (Audit Log)</h2>
+        <div id="table-audit"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>
