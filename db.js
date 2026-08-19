@@ -167,3 +167,8 @@ try {
   // العمود موجود بالفعل — لا حاجة لفعل شيء
 }
 module.exports = db;
+try {
+  db.exec("ALTER TABLE routes ADD COLUMN geometry_source TEXT DEFAULT 'osrm'");
+} catch (e) {
+  // العمود موجود بالفعل — لا حاجة لفعل شيء
+}
