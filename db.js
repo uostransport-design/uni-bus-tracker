@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS routes (
   color TEXT DEFAULT '#2563eb',
   start_time TEXT DEFAULT '07:00',
   end_time TEXT DEFAULT '22:00',
-  status TEXT DEFAULT 'active'
+  status TEXT DEFAULT 'active',
+  geometry TEXT
 );
 
 CREATE TABLE IF NOT EXISTS stations (
@@ -157,5 +158,10 @@ CREATE TABLE IF NOT EXISTS system_settings (
   value TEXT
 );
 `);
-
+// ترقية آمنة لقاعدة بيانات موجودة مسبقًا: إضافة عمود geometry إذا لم يكن موجودًا
+try {
+  db.exec('ALTER TABLE routes ADD COLUMN geometry TEXT');
+} catch (e) {
+  // العمود موجود بالفعل — لا حاجة لفعل شيء
+}
 module.exports = db;
