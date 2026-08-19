@@ -2,7 +2,9 @@
 const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 
-const db = new DatabaseSync(path.join(__dirname, 'bus_tracker.db'));
+const fs = require('fs');
+const DATA_DIR = fs.existsSync('/var/data') ? '/var/data' : __dirname;
+const db = new DatabaseSync(path.join(DATA_DIR, 'bus_tracker.db'));
 db.exec('PRAGMA journal_mode = WAL;');
 db.exec('PRAGMA foreign_keys = ON;');
 
