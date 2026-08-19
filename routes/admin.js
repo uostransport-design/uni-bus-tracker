@@ -4,13 +4,23 @@ const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { logAction } = require('../middleware/audit');
-
+const { fetchRoadGeometry } = require('../services/routing');
 const router = express.Router();
 router.use(requireAuth);
 
 const canManage = requireRole('super_admin', 'transport_manager', 'dispatcher');
 const canManageUsers = requireRole('super_admin');
 
+async function recomputeRouteGeometry(routeId) {
+  const stations = db.prepare(
+    `SELECT s.lat, s.lng FROM route_stations rs JOIN stations s ON s.id = rs.station_id
+     WHERE rs.route_id = ? ORDER BY rs.sequence ASC`
+  ).all(routeId);
+
+  const geometry = await fetchRoadGeometry(stations);
+  db.prepare('UPDATE routes SET geometry = ? WHERE id = ?').run(geometry ? JSON.stringify(geometry) : null, routeId);
+  return !!geometry;
+}
 /* ============================ إحصائيات لوحة القيادة ============================ */
 router.get('/dashboard/stats', (req, res) => {
   const buses = db.prepare('SELECT * FROM buses').all();
@@ -150,19 +160,29 @@ router.delete('/routes/:id', canManage, (req, res) => {
   res.json({ ok: true });
 });
 
-router.post('/routes/:id/stations', canManage, (req, res) => {
+router.post('/routes/:id/stations', canManage, async (req, res) => {
   const { station_id, sequence, dwell_seconds } = req.body;
   if (!station_id) return res.status(400).json({ error: 'station_id مطلوب' });
   const info = db.prepare('INSERT INTO route_stations (route_id, station_id, sequence, dwell_seconds) VALUES (?,?,?,?)')
     .run(req.params.id, station_id, sequence || 999, dwell_seconds || 30);
   logAction(req.user, 'add_station_to_route', 'route', req.params.id, { station_id });
-  res.json({ id: info.lastInsertRowid });
+
+  const followsRoad = await recomputeRouteGeometry(req.params.id);
+  res.json({ id: info.lastInsertRowid, followsRoad });
 });
 
-router.delete('/routes/:routeId/stations/:stationId', canManage, (req, res) => {
+router.post('/routes/:id/recompute-geometry', canManage, async (req, res) => {
+  const followsRoad = await recomputeRouteGeometry(req.params.id);
+  logAction(req.user, 'recompute_geometry', 'route', req.params.id, { followsRoad });
+  res.json({ followsRoad });
+});
+
+router.delete('/routes/:routeId/stations/:stationId', canManage, async (req, res) => {
   db.prepare('DELETE FROM route_stations WHERE route_id=? AND station_id=?').run(req.params.routeId, req.params.stationId);
   logAction(req.user, 'remove_station_from_route', 'route', req.params.routeId, { station_id: req.params.stationId });
-  res.json({ ok: true });
+
+  const followsRoad = await recomputeRouteGeometry(req.params.routeId);
+  res.json({ ok: true, followsRoad });
 });
 
 /* ============================ السائقون ============================ */
