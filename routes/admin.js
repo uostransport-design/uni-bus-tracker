@@ -11,14 +11,20 @@ router.use(requireAuth);
 const canManage = requireRole('super_admin', 'transport_manager', 'dispatcher');
 const canManageUsers = requireRole('super_admin');
 
-async function recomputeRouteGeometry(routeId) {
+async function recomputeRouteGeometry(routeId, force = false) {
+  const route = db.prepare('SELECT geometry_source FROM routes WHERE id=?').get(routeId);
+  if (!force && route && route.geometry_source === 'manual') {
+    return true;
+  }
+
   const stations = db.prepare(
     `SELECT s.lat, s.lng FROM route_stations rs JOIN stations s ON s.id = rs.station_id
      WHERE rs.route_id = ? ORDER BY rs.sequence ASC`
   ).all(routeId);
 
   const geometry = await fetchRoadGeometry(stations);
-  db.prepare('UPDATE routes SET geometry = ? WHERE id = ?').run(geometry ? JSON.stringify(geometry) : null, routeId);
+  db.prepare("UPDATE routes SET geometry = ?, geometry_source = 'osrm' WHERE id = ?")
+    .run(geometry ? JSON.stringify(geometry) : null, routeId);
   return !!geometry;
 }
 /* ============================ إحصائيات لوحة القيادة ============================ */
@@ -172,9 +178,20 @@ router.post('/routes/:id/stations', canManage, async (req, res) => {
 });
 
 router.post('/routes/:id/recompute-geometry', canManage, async (req, res) => {
-  const followsRoad = await recomputeRouteGeometry(req.params.id);
+  const followsRoad = await recomputeRouteGeometry(req.params.id, true);
   logAction(req.user, 'recompute_geometry', 'route', req.params.id, { followsRoad });
   res.json({ followsRoad });
+});
+
+router.put('/routes/:id/geometry', canManage, (req, res) => {
+  const { points } = req.body;
+  if (!Array.isArray(points) || points.length < 2) {
+    return res.status(400).json({ error: 'points يجب أن تكون مصفوفة من نقطتين على الأقل' });
+  }
+  db.prepare("UPDATE routes SET geometry = ?, geometry_source = 'manual' WHERE id = ?")
+    .run(JSON.stringify(points), req.params.id);
+  logAction(req.user, 'manual_route_draw', 'route', req.params.id, { pointCount: points.length });
+  res.json({ ok: true });
 });
 
 router.delete('/routes/:routeId/stations/:stationId', canManage, async (req, res) => {
