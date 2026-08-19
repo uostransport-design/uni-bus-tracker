@@ -28,8 +28,10 @@ const stationIcon = L.divIcon({ className: '', html: '<div class="station-marker
 async function loadRoutes() {
   routesCache = await (await fetch('/api/routes')).json();
   routesCache.forEach((route) => {
-    const latlngs = route.stations.map((s) => [s.lat, s.lng]);
-    if (latlngs.length > 1) L.polyline(latlngs, { color: route.color, weight: 4, opacity: 0.65 }).addTo(map);
+    const latlngs = (route.geometry && route.geometry.length > 1)
+      ? route.geometry
+      : route.stations.map((s) => [s.lat, s.lng]);
+    if (latlngs.length > 1) L.polyline(latlngs, { color: route.color, weight: 4, opacity: 0.75 }).addTo(map);
   });
 }
 
