@@ -7,7 +7,9 @@
 <style>
   * { box-sizing: border-box; }
   body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0b1220; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
-  .box { background: white; border-radius: 14px; padding: 30px; width: 100%; max-width: 360px; }
+  .box { background: white; border-radius: 14px; padding: 30px; width: 100%; max-width: 360px; position: relative; }
+  .lang-btn { position: absolute; top: -40px; left: 0; background: rgba(255,255,255,.1); color: white; border: 1px solid rgba(255,255,255,.25); border-radius: 8px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  [dir="rtl"] .lang-btn { left: auto; right: 0; }
   .box h1 { font-size: 18px; margin: 0 0 4px; color: #0f172a; }
   .box p { color: #64748b; font-size: 13px; margin: 0 0 22px; }
   label { display: block; font-size: 13px; color: #334155; margin-bottom: 6px; }
@@ -19,17 +21,22 @@
 </head>
 <body>
   <form class="box" id="login-form">
-    <h1>🚌 دخول السائقين</h1>
+    <button type="button" class="lang-btn" id="lang-toggle">EN</button>
+    <h1 data-i18n="driverLoginTitle">🚌 دخول السائقين</h1>
     <p>Driver Login — University of Sharjah</p>
     <div id="error"></div>
-    <label>البريد الإلكتروني</label>
+    <label data-i18n="email">البريد الإلكتروني</label>
     <input type="email" id="email" required />
-    <label>كلمة المرور</label>
+    <label data-i18n="password">كلمة المرور</label>
     <input type="password" id="password" required />
-    <button type="submit">تسجيل الدخول</button>
-    <a class="back" href="/">⬅ رجوع</a>
+    <button type="submit" data-i18n="loginBtn">تسجيل الدخول</button>
+    <a class="back" href="/" data-i18n="back">⬅ رجوع</a>
   </form>
+  <script src="../js/i18n.js"></script>
   <script>
+    applyLang();
+    document.getElementById('lang-toggle').addEventListener('click', () => setLang(getLang() === 'ar' ? 'en' : 'ar'));
+
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const errorEl = document.getElementById('error');
@@ -40,8 +47,8 @@
           body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('password').value }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'فشل تسجيل الدخول');
-        if (data.user.role !== 'driver') throw new Error('هذا الحساب ليس حساب سائق');
+        if (!res.ok) throw new Error(data.error || t().loginFailed);
+        if (data.user.role !== 'driver') throw new Error(t().notDriverAccount);
         localStorage.setItem('bus_driver_token', data.token);
         localStorage.setItem('bus_driver_user', JSON.stringify(data.user));
         window.location.href = '/driver/app.html';
