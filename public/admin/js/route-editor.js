@@ -1,4 +1,5 @@
-// route-editor.js — manual route drawing tool on top of the live map
+// route-editor.js — أداة رسم مسار الحافلة يدويًا فوق الخريطة الفعلية
+// يدعم: سحب أي نقطة لتحريكها، نقر يمين لحذف نقطة محددة، النقر على الخط لإدراج نقطة بالمنتصف
 
 const token = localStorage.getItem('bus_admin_token');
 if (!token) window.location.href = '/admin/login.html';
@@ -18,6 +19,8 @@ const map = L.map('map').setView([25.2989, 55.4784], 16);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
 
 const stationIcon = L.divIcon({ className: '', html: '<div style="background:#d4a017;width:14px;height:14px;border-radius:50%;border:2px solid #1a1a1a"></div>', iconSize: [14, 14] });
+const pointIcon = L.divIcon({ className: '', html: '<div style="background:#dc2626;width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 0 3px rgba(0,0,0,.5);cursor:move"></div>', iconSize: [12, 12] });
+
 const drawnPolyline = L.polyline([], { color: '#dc2626', weight: 5, opacity: 0.85 }).addTo(map);
 let points = [];
 let markers = [];
@@ -27,28 +30,78 @@ function refreshLine() {
   document.getElementById('point-count').textContent = points.length;
 }
 
-function addPoint(latlng) {
-  points.push([latlng.lat, latlng.lng]);
-  const m = L.circleMarker(latlng, { radius: 4, color: '#dc2626', fillColor: '#dc2626', fillOpacity: 1 }).addTo(map);
-  markers.push(m);
+function rebuildMarkers() {
+  markers.forEach((m) => map.removeLayer(m));
+  markers = points.map((p, i) => createMarker(p, i));
   refreshLine();
 }
 
-map.on('click', (e) => addPoint(e.latlng));
+function createMarker(latlng, index) {
+  const marker = L.marker(latlng, { draggable: true, icon: pointIcon }).addTo(map);
+
+  marker.on('drag', (e) => {
+    points[index] = [e.latlng.lat, e.latlng.lng];
+    drawnPolyline.setLatLngs(points);
+  });
+
+  marker.on('contextmenu', (e) => {
+    L.DomEvent.stopPropagation(e);
+    points.splice(index, 1);
+    rebuildMarkers();
+  });
+
+  return marker;
+}
+
+function appendPoint(latlng) {
+  points.push([latlng.lat, latlng.lng]);
+  markers.push(createMarker(latlng, points.length - 1));
+  refreshLine();
+}
+
+function findNearestSegmentIndex(latlng) {
+  const clickPt = map.latLngToLayerPoint(latlng);
+  let bestIndex = 0;
+  let bestDist = Infinity;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = map.latLngToLayerPoint(points[i]);
+    const b = map.latLngToLayerPoint(points[i + 1]);
+    const d = distanceToSegment(clickPt, a, b);
+    if (d < bestDist) { bestDist = d; bestIndex = i; }
+  }
+  return bestIndex;
+}
+
+function distanceToSegment(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const lengthSq = dx * dx + dy * dy;
+  if (lengthSq === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+  let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lengthSq;
+  t = Math.max(0, Math.min(1, t));
+  const projX = a.x + t * dx, projY = a.y + t * dy;
+  return Math.hypot(p.x - projX, p.y - projY);
+}
+
+drawnPolyline.on('click', (e) => {
+  L.DomEvent.stopPropagation(e);
+  if (points.length < 2) return;
+  const insertIndex = findNearestSegmentIndex(e.latlng);
+  points.splice(insertIndex + 1, 0, [e.latlng.lat, e.latlng.lng]);
+  rebuildMarkers();
+});
+
+map.on('click', (e) => appendPoint(e.latlng));
 
 document.getElementById('undo-btn').addEventListener('click', () => {
   points.pop();
-  const m = markers.pop();
-  if (m) map.removeLayer(m);
-  refreshLine();
+  rebuildMarkers();
 });
 
 document.getElementById('clear-btn').addEventListener('click', () => {
   if (!confirm('مسح كل النقاط المرسومة؟')) return;
   points = [];
-  markers.forEach((m) => map.removeLayer(m));
-  markers = [];
-  refreshLine();
+  rebuildMarkers();
 });
 
 document.getElementById('reset-osrm-btn').addEventListener('click', async () => {
@@ -81,11 +134,7 @@ async function loadRoute() {
 
   if (route.geometry && route.geometry.length > 1) {
     points = route.geometry.map((p) => [p[0], p[1]]);
-    points.forEach((p) => {
-      const m = L.circleMarker(p, { radius: 4, color: '#dc2626', fillColor: '#dc2626', fillOpacity: 1 }).addTo(map);
-      markers.push(m);
-    });
-    refreshLine();
+    rebuildMarkers();
     map.fitBounds(drawnPolyline.getBounds(), { padding: [40, 40] });
   } else if (route.stations.length) {
     map.fitBounds(L.latLngBounds(route.stations.map((s) => [s.lat, s.lng])), { padding: [60, 60] });
