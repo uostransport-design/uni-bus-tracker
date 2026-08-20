@@ -3,35 +3,40 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>دخول السائقين — حافلات جامعة الشارقة</title>
+<title>دخول الموظفين — نظام حافلات الجامعة</title>
 <style>
   * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0b1220; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
-  .box { background: white; border-radius: 14px; padding: 30px; width: 100%; max-width: 360px; position: relative; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: #0f172a; font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+  }
+  .box { background: white; border-radius: 14px; padding: 32px; width: 100%; max-width: 380px; position: relative; }
   .lang-btn { position: absolute; top: -40px; left: 0; background: rgba(255,255,255,.1); color: white; border: 1px solid rgba(255,255,255,.25); border-radius: 8px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
   [dir="rtl"] .lang-btn { left: auto; right: 0; }
-  .box h1 { font-size: 18px; margin: 0 0 4px; color: #0f172a; }
-  .box p { color: #64748b; font-size: 13px; margin: 0 0 22px; }
+  .box h1 { font-size: 19px; margin: 0 0 4px; color: #0f172a; }
+  .box p { color: #64748b; font-size: 13px; margin: 0 0 24px; }
   label { display: block; font-size: 13px; color: #334155; margin-bottom: 6px; }
-  input { width: 100%; padding: 11px 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 16px; font-size: 15px; }
-  button { width: 100%; padding: 13px; background: #d4a017; color: #1a1a1a; border: none; border-radius: 8px; font-weight: 800; font-size: 15px; cursor: pointer; }
+  input { width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+  button { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; }
+  button:hover { background: #1d4ed8; }
   #error { color: #dc2626; font-size: 13px; margin-bottom: 12px; display: none; }
-  a.back { display: block; text-align: center; margin-top: 16px; font-size: 12.5px; color: #94a3b8; text-decoration: none; }
+  a.back { display: block; text-align: center; margin-top: 18px; font-size: 12.5px; color: #94a3b8; text-decoration: none; }
 </style>
 </head>
 <body>
   <form class="box" id="login-form">
     <button type="button" class="lang-btn" id="lang-toggle">EN</button>
-    <h1 data-i18n="driverLoginTitle">🚌 دخول السائقين</h1>
-    <p>Driver Login — University of Sharjah</p>
+    <h1 data-i18n="staffLoginTitle">🔐 دخول الموظفين</h1>
+    <p data-i18n="staffLoginSubtitle">نظام تتبع حافلات جامعة الشارقة</p>
     <div id="error"></div>
     <label data-i18n="email">البريد الإلكتروني</label>
     <input type="email" id="email" required />
     <label data-i18n="password">كلمة المرور</label>
     <input type="password" id="password" required />
     <button type="submit" data-i18n="loginBtn">تسجيل الدخول</button>
-    <a class="back" href="/" data-i18n="back">⬅ رجوع</a>
+    <a class="back" href="/" data-i18n="backHome">⬅ رجوع للصفحة الرئيسية</a>
   </form>
+
   <script src="../js/i18n.js"></script>
   <script>
     applyLang();
@@ -43,15 +48,18 @@
       errorEl.style.display = 'none';
       try {
         const res = await fetch('/api/auth/login', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('password').value }),
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+          }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || t().loginFailed);
-        if (data.user.role !== 'driver') throw new Error(t().notDriverAccount);
-        localStorage.setItem('bus_driver_token', data.token);
-        localStorage.setItem('bus_driver_user', JSON.stringify(data.user));
-        window.location.href = '/driver/app.html';
+        localStorage.setItem('bus_admin_token', data.token);
+        localStorage.setItem('bus_admin_user', JSON.stringify(data.user));
+        window.location.href = '/admin/dashboard.html';
       } catch (err) {
         errorEl.textContent = err.message;
         errorEl.style.display = 'block';
