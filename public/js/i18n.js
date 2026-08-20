@@ -320,3 +320,8 @@ function applyLang() {
   if (toggle) toggle.textContent = lang === 'ar' ? 'EN' : 'AR';
   document.dispatchEvent(new CustomEvent('langchange'));
 }
+
+// مزامنة اللغة تلقائيًا بين الصفحة الرئيسية وأي إطار (iframe) مضمّن بداخلها مثل الخريطة الحية بلوحة الإدارة
+window.addEventListener('storage', (e) => {
+  if (e.key === 'bus_lang') applyLang();
+});
