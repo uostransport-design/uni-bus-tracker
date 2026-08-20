@@ -1,55 +1,44 @@
-// i18n.js — قاموس ترجمة بسيط + دالة تبديل اللغة (عربي RTL / إنجليزي LTR)
-const I18N = {
-  ar: {
-    dir: 'rtl', lang: 'ar',
-    title: 'تتبع حافلات جامعة الشارقة',
-    activeBuses: 'الحافلات النشطة',
-    allStations: 'كل المحطات',
-    selectStation: 'اختر محطة',
-    arrivingIn: 'الوصول خلال',
-    minutes: 'دقيقة',
-    lessThanMinute: 'أقل من دقيقة',
-    currentStation: 'المحطة الحالية',
-    nextStation: 'المحطة القادمة',
-    status: { in_service: 'في الخدمة', approaching: 'تقترب', at_station: 'عند المحطة', delayed: 'متأخرة', out_of_service: 'خارج الخدمة', emergency: 'حالة طارئة' },
-    staffLogin: 'دخول الموظفين',
-    driverLogin: 'دخول السائقين',
-    trackBuses: 'تتبع الحافلات',
-    noBuses: 'لا توجد حافلات قادمة إلى هذه المحطة حاليًا',
-    offline: 'غير متصلة',
-  },
-  en: {
-    dir: 'ltr', lang: 'en',
-    title: 'University of Sharjah — Live Bus Tracking',
-    activeBuses: 'Active Buses',
-    allStations: 'All Stations',
-    selectStation: 'Select a station',
-    arrivingIn: 'Arriving in',
-    minutes: 'min',
-    lessThanMinute: 'less than a minute',
-    currentStation: 'Current Station',
-    nextStation: 'Next Station',
-    status: { in_service: 'In Service', approaching: 'Approaching', at_station: 'At Station', delayed: 'Delayed', out_of_service: 'Out of Service', emergency: 'Emergency' },
-    staffLogin: 'Staff Login',
-    driverLogin: 'Driver Login',
-    trackBuses: 'Track Buses',
-    noBuses: 'No buses currently arriving at this station',
-    offline: 'Offline',
-  },
-};
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>منصة تتبع حافلات جامعة الشارقة</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(160deg, #0b1220, #142240);
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif; color: white;
+  }
+  .card { text-align: center; padding: 40px; max-width: 460px; position: relative; }
+  .logo-badge { width: 56px; height: 56px; border-radius: 14px; background: #d4a017; color: #1a1a1a; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; margin: 0 auto 18px; }
+  .card h1 { font-size: 24px; margin-bottom: 6px; }
+  .card p { color: #cbd5e1; font-size: 14px; margin-bottom: 32px; }
+  .btn { display: block; width: 100%; padding: 14px; margin-bottom: 12px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 15px; transition: transform .15s; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn.primary { background: #2563eb; color: white; }
+  .btn.gold { background: #d4a017; color: #1a1a1a; }
+  .btn.secondary { background: rgba(255,255,255,.08); color: #e2e8f0; border: 1px solid rgba(255,255,255,.2); }
+  .lang-btn { position: absolute; top: -20px; left: 0; background: rgba(255,255,255,.1); color: white; border: 1px solid rgba(255,255,255,.25); border-radius: 8px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  [dir="rtl"] .lang-btn { left: auto; right: 0; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <button class="lang-btn" id="lang-toggle">EN</button>
+    <div class="logo-badge">UOS</div>
+    <h1 data-i18n="title">منصة تتبع حافلات جامعة الشارقة</h1>
+    <p data-i18n="landingSubtitle">University of Sharjah Live Bus Tracking Platform</p>
+    <a class="btn gold" href="/display.html" data-i18n="landingTrackBtn">🗺️ تتبع الحافلات المباشر</a>
+    <a class="btn secondary" href="/driver/login.html" data-i18n="landingDriverBtn">🚌 دخول السائقين</a>
+    <a class="btn secondary" href="/admin/login.html" data-i18n="landingStaffBtn">🔐 دخول الموظفين</a>
+  </div>
 
-function getLang() { return localStorage.getItem('bus_lang') || 'ar'; }
-function setLang(lang) { localStorage.setItem('bus_lang', lang); applyLang(); }
-function t() { return I18N[getLang()]; }
-
-function applyLang() {
-  const lang = getLang();
-  document.documentElement.lang = lang;
-  document.documentElement.dir = I18N[lang].dir;
-  document.querySelectorAll('[data-i18n]').forEach((el) => {
-    const key = el.getAttribute('data-i18n');
-    const val = key.split('.').reduce((o, k) => (o ? o[k] : null), I18N[lang]);
-    if (val) el.textContent = val;
-  });
-  document.dispatchEvent(new CustomEvent('langchange'));
-}
+  <script src="js/i18n.js"></script>
+  <script>
+    applyLang();
+    document.getElementById('lang-toggle').addEventListener('click', () => setLang(getLang() === 'ar' ? 'en' : 'ar'));
+  </script>
+</body>
+</html>
