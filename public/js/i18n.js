@@ -1,4 +1,4 @@
-// i18n.js — قاموس ترجمة موسّع
+// i18n.js — قاموس ترجمة شامل: شاشة العرض + الصفحة الرئيسية + صفحات الدخول + تطبيق السائق + لوحة الإدارة
 const I18N = {
   ar: {
     dir: 'rtl', lang: 'ar',
@@ -17,10 +17,12 @@ const I18N = {
     trackBuses: 'تتبع الحافلات',
     noBuses: 'لا توجد حافلات قادمة إلى هذه المحطة حاليًا',
     offline: 'غير متصلة',
+
     landingSubtitle: 'منصة تتبع حافلات جامعة الشارقة',
     landingTrackBtn: '🗺️ تتبع الحافلات المباشر',
     landingDriverBtn: '🚌 دخول السائقين',
     landingStaffBtn: '🔐 دخول الموظفين',
+
     staffLoginTitle: '🔐 دخول الموظفين',
     staffLoginSubtitle: 'نظام تتبع حافلات جامعة الشارقة',
     driverLoginTitle: '🚌 دخول السائقين',
@@ -31,6 +33,7 @@ const I18N = {
     back: '⬅ رجوع',
     loginFailed: 'فشل تسجيل الدخول',
     notDriverAccount: 'هذا الحساب ليس حساب سائق',
+
     driverAppTitle: 'تطبيق السائق',
     logout: 'خروج',
     chooseBus: 'اختر الحافلة التي ستقودها الآن',
@@ -49,6 +52,101 @@ const I18N = {
     incidentSentMsg: 'تم إرسال البلاغ',
     confirmEndTrip: 'هل تريد إنهاء الرحلة؟',
     noRoute: 'بدون مسار',
+
+    admin: {
+      nav: {
+        overview: 'نظرة عامة', map: 'الخريطة الحية', vehicles: 'المركبات', stations: 'المحطات',
+        routes: 'المسارات', drivers: 'السائقون', alerts: 'التنبيهات', announcements: 'الإعلانات',
+        incidents: 'البلاغات', reports: 'التقارير', users: 'المستخدمون', audit: 'سجل التدقيق',
+      },
+      roleLabels: { super_admin: 'مدير عام', transport_manager: 'مدير النقل', dispatcher: 'موظف تشغيل', viewer: 'مشاهدة فقط', driver: 'سائق' },
+      changePassword: 'تغيير كلمة المرور',
+      logout: 'تسجيل الخروج',
+      common: {
+        add: '+ إضافة', edit: 'تعديل', delete: 'حذف', save: 'حفظ التعديلات', cancel: 'إلغاء',
+        actions: '', name: 'الاسم', status: 'الحالة', active: 'نشط', inactive: 'موقوف',
+        confirmDelete: 'هل أنت متأكد من الحذف؟', none: '— بدون —', yourAccount: 'حسابك',
+      },
+      overview: {
+        title: 'نظرة عامة',
+        total: 'إجمالي الحافلات', inService: 'في الخدمة', approaching: 'تقترب من محطة', atStation: 'عند المحطة',
+        delayed: 'متأخرة', emergency: 'حالات طارئة', outOfService: 'خارج الخدمة', offline: 'غير متصلة',
+        activeTrips: 'رحلات نشطة الآن', arrivalsLast7: 'وصولات آخر 7 أيام',
+      },
+      vehicles: {
+        title: 'المركبات (الحافلات)', addBtn: '+ إضافة حافلة',
+        name: 'الاسم', plate: 'اللوحة', type: 'النوع', seats: 'السعة', route: 'المسار', driver: 'السائق',
+        status: 'الحالة', connectivity: 'الاتصال', deviceKey: 'مفتاح الجهاز',
+        online: 'متصل', offlineStatus: 'غير متصل', empty: 'لا توجد حافلات مضافة بعد',
+        formName: 'اسم الحافلة', formPlate: 'رقم اللوحة', formType: 'نوع الحافلة', formSeats: 'عدد المقاعد',
+        formPhoto: 'رابط صورة الحافلة (اختياري)', formRoute: 'المسار', formDriver: 'السائق',
+        formStatus: 'حالة المركبة', formDeviceKey: 'مفتاح جهاز GPS (فريد)',
+        addTitle: 'إضافة الحافلة', editTitle: 'حفظ التعديلات',
+        statusActive: 'نشطة', statusMaintenance: 'صيانة', statusInactive: 'متوقفة',
+        busStatusActive: 'نشطة', busStatusEmergency: 'طارئة', busStatusMaintenance: 'خارج الخدمة',
+      },
+      stations: {
+        title: 'المحطات', addBtn: '+ إضافة محطة',
+        code: 'الرمز', nameAr: 'الاسم (عربي)', nameEn: 'الاسم (إنجليزي)', lat: 'خط العرض', lng: 'خط الطول',
+        empty: 'لا توجد محطات بعد',
+        formCode: 'الرمز', formNameAr: 'الاسم بالعربية', formNameEn: 'الاسم بالإنجليزية',
+        formLat: 'خط العرض (Latitude)', formLng: 'خط الطول (Longitude)', formStatus: 'الحالة',
+        addTitle: 'إضافة المحطة',
+        statusActive: 'نشطة', statusInactive: 'موقوفة',
+      },
+      routes: {
+        title: 'المسارات', addBtn: '+ إضافة مسار', addStation: '+ إضافة محطة', manualDraw: '🖊️ رسم يدوي',
+        deleteRoute: 'حذف المسار', editBtn: '✏️ تعديل', remove: 'إزالة', sequence: '#', station: 'المحطة',
+        empty: 'لا توجد مسارات بعد', emptyStations: 'لا توجد محطات في هذا المسار',
+        formNameAr: 'الاسم بالعربية', formNameEn: 'الاسم بالإنجليزية', formColor: 'اللون',
+        formStart: 'وقت البدء', formEnd: 'وقت الانتهاء', formStatus: 'الحالة',
+        addTitle: 'إضافة المسار',
+        promptStationList: 'اختر رقم المحطة من القائمة:', promptSequence: 'ترتيب المحطة في المسار:',
+      },
+      drivers: {
+        title: 'السائقون', addBtn: '+ إضافة سائق',
+        phone: 'الهاتف', license: 'رقم الرخصة', status: 'الحالة', empty: 'لا يوجد سائقون بعد',
+        formName: 'اسم السائق', formPhone: 'رقم الهاتف', formLicense: 'رقم رخصة القيادة', formStatus: 'الحالة',
+        addTitle: 'إضافة السائق',
+        statusActive: 'نشط', statusInactive: 'موقوف',
+      },
+      alerts: {
+        title: 'التنبيهات',
+        bus: 'الحافلة', type: 'النوع', message: 'الرسالة', severity: 'الخطورة', time: 'الوقت',
+        resolve: 'تمييز كمعالج', resolved: '✅ معالج', pending: '⏳', empty: 'لا توجد تنبيهات',
+      },
+      announcements: {
+        title: 'الإعلانات (تظهر في شاشات المحطات)', addBtn: '+ إعلان جديد',
+        ar: 'عربي', en: 'إنجليزي', scope: 'النطاق', allStations: 'كل المحطات', created: 'الإنشاء',
+        empty: 'لا توجد إعلانات',
+        formMessageAr: 'النص بالعربية', formMessageEn: 'النص بالإنجليزية',
+        formExpires: 'ينتهي بعد (دقائق، اتركه فارغًا لعدم الانتهاء)',
+        addTitle: 'نشر الإعلان',
+      },
+      incidents: {
+        title: 'بلاغات السائقين',
+        bus: 'الحافلة', driver: 'السائق', type: 'النوع', notes: 'الملاحظات', time: 'الوقت',
+        resolve: 'معالجة', empty: 'لا توجد بلاغات',
+        types: { breakdown: 'عطل', congestion: 'ازدحام', accident: 'حادث', emergency: 'طارئ' },
+      },
+      reports: {
+        title: 'التقارير', exportCsv: '⬇ تصدير CSV / Excel',
+        summaryTitle: 'ملخص آخر 7 أيام', arrivalsTitle: 'سجل الوصول للمحطات',
+        bus: 'الحافلة', plate: 'اللوحة', arrivalsToday: 'الوصولات (اليوم)', arrivals7: 'الوصولات (7 أيام)',
+        route: 'المسار', station: 'المحطة', time: 'الوقت', empty: 'لا يوجد سجل بعد',
+      },
+      users: {
+        title: 'حسابات المستخدمين', addBtn: '+ إضافة مستخدم',
+        name: 'الاسم', email: 'البريد', role: 'الدور',
+        formName: 'الاسم', formEmail: 'البريد الإلكتروني', formPassword: 'كلمة المرور',
+        formPasswordEdit: 'كلمة مرور جديدة (اتركها فارغة لعدم التغيير)', formRole: 'الدور',
+        addTitle: 'إضافة المستخدم',
+      },
+      audit: {
+        title: 'سجل التدقيق (Audit Log)',
+        user: 'المستخدم', action: 'الإجراء', entity: 'العنصر', time: 'الوقت',
+      },
+    },
   },
   en: {
     dir: 'ltr', lang: 'en',
@@ -67,10 +165,12 @@ const I18N = {
     trackBuses: 'Track Buses',
     noBuses: 'No buses currently arriving at this station',
     offline: 'Offline',
+
     landingSubtitle: 'University of Sharjah Live Bus Tracking Platform',
     landingTrackBtn: '🗺️ Live Bus Map',
     landingDriverBtn: '🚌 Driver Login',
     landingStaffBtn: '🔐 Staff Login',
+
     staffLoginTitle: '🔐 Staff Login',
     staffLoginSubtitle: 'University of Sharjah Bus Tracking System',
     driverLoginTitle: '🚌 Driver Login',
@@ -81,6 +181,7 @@ const I18N = {
     back: '⬅ Back',
     loginFailed: 'Login failed',
     notDriverAccount: 'This account is not a driver account',
+
     driverAppTitle: 'Driver App',
     logout: 'Sign Out',
     chooseBus: 'Choose the bus you are driving now',
@@ -99,6 +200,101 @@ const I18N = {
     incidentSentMsg: 'Report sent',
     confirmEndTrip: 'Do you want to end the trip?',
     noRoute: 'No route assigned',
+
+    admin: {
+      nav: {
+        overview: 'Overview', map: 'Live Map', vehicles: 'Vehicles', stations: 'Stations',
+        routes: 'Routes', drivers: 'Drivers', alerts: 'Alerts', announcements: 'Announcements',
+        incidents: 'Incidents', reports: 'Reports', users: 'Users', audit: 'Audit Log',
+      },
+      roleLabels: { super_admin: 'Super Admin', transport_manager: 'Transport Manager', dispatcher: 'Dispatcher', viewer: 'Viewer', driver: 'Driver' },
+      changePassword: 'Change Password',
+      logout: 'Sign Out',
+      common: {
+        add: '+ Add', edit: 'Edit', delete: 'Delete', save: 'Save Changes', cancel: 'Cancel',
+        actions: '', name: 'Name', status: 'Status', active: 'Active', inactive: 'Inactive',
+        confirmDelete: 'Are you sure you want to delete this?', none: '— None —', yourAccount: 'Your account',
+      },
+      overview: {
+        title: 'Overview',
+        total: 'Total Buses', inService: 'In Service', approaching: 'Approaching a Station', atStation: 'At Station',
+        delayed: 'Delayed', emergency: 'Emergencies', outOfService: 'Out of Service', offline: 'Offline',
+        activeTrips: 'Active Trips Now', arrivalsLast7: 'Arrivals (Last 7 Days)',
+      },
+      vehicles: {
+        title: 'Vehicles (Buses)', addBtn: '+ Add Vehicle',
+        name: 'Name', plate: 'Plate', type: 'Type', seats: 'Seats', route: 'Route', driver: 'Driver',
+        status: 'Status', connectivity: 'Connectivity', deviceKey: 'Device Key',
+        online: 'Online', offlineStatus: 'Offline', empty: 'No vehicles added yet',
+        formName: 'Bus Name', formPlate: 'Plate Number', formType: 'Bus Type', formSeats: 'Number of Seats',
+        formPhoto: 'Bus Photo URL (optional)', formRoute: 'Route', formDriver: 'Driver',
+        formStatus: 'Vehicle Status', formDeviceKey: 'GPS Device Key (unique)',
+        addTitle: 'Add Vehicle', editTitle: 'Save Changes',
+        statusActive: 'Active', statusMaintenance: 'Maintenance', statusInactive: 'Inactive',
+        busStatusActive: 'Active', busStatusEmergency: 'Emergency', busStatusMaintenance: 'Out of Service',
+      },
+      stations: {
+        title: 'Stations', addBtn: '+ Add Station',
+        code: 'Code', nameAr: 'Name (Arabic)', nameEn: 'Name (English)', lat: 'Latitude', lng: 'Longitude',
+        empty: 'No stations added yet',
+        formCode: 'Code', formNameAr: 'Arabic Name', formNameEn: 'English Name',
+        formLat: 'Latitude', formLng: 'Longitude', formStatus: 'Status',
+        addTitle: 'Add Station',
+        statusActive: 'Active', statusInactive: 'Inactive',
+      },
+      routes: {
+        title: 'Routes', addBtn: '+ Add Route', addStation: '+ Add Station', manualDraw: '🖊️ Manual Draw',
+        deleteRoute: 'Delete Route', editBtn: '✏️ Edit', remove: 'Remove', sequence: '#', station: 'Station',
+        empty: 'No routes added yet', emptyStations: 'No stations in this route',
+        formNameAr: 'Arabic Name', formNameEn: 'English Name', formColor: 'Color',
+        formStart: 'Start Time', formEnd: 'End Time', formStatus: 'Status',
+        addTitle: 'Add Route',
+        promptStationList: 'Choose a station number from the list:', promptSequence: 'Station order in the route:',
+      },
+      drivers: {
+        title: 'Drivers', addBtn: '+ Add Driver',
+        phone: 'Phone', license: 'License Number', status: 'Status', empty: 'No drivers added yet',
+        formName: 'Driver Name', formPhone: 'Phone Number', formLicense: 'Driving License Number', formStatus: 'Status',
+        addTitle: 'Add Driver',
+        statusActive: 'Active', statusInactive: 'Inactive',
+      },
+      alerts: {
+        title: 'Alerts',
+        bus: 'Bus', type: 'Type', message: 'Message', severity: 'Severity', time: 'Time',
+        resolve: 'Mark Resolved', resolved: '✅ Resolved', pending: '⏳', empty: 'No alerts',
+      },
+      announcements: {
+        title: 'Announcements (shown on station screens)', addBtn: '+ New Announcement',
+        ar: 'Arabic', en: 'English', scope: 'Scope', allStations: 'All Stations', created: 'Created',
+        empty: 'No announcements',
+        formMessageAr: 'Arabic Message', formMessageEn: 'English Message',
+        formExpires: 'Expires after (minutes, leave empty for no expiry)',
+        addTitle: 'Publish Announcement',
+      },
+      incidents: {
+        title: 'Driver Reports',
+        bus: 'Bus', driver: 'Driver', type: 'Type', notes: 'Notes', time: 'Time',
+        resolve: 'Resolve', empty: 'No reports',
+        types: { breakdown: 'Breakdown', congestion: 'Congestion', accident: 'Accident', emergency: 'Emergency' },
+      },
+      reports: {
+        title: 'Reports', exportCsv: '⬇ Export CSV / Excel',
+        summaryTitle: 'Last 7 Days Summary', arrivalsTitle: 'Station Arrivals Log',
+        bus: 'Bus', plate: 'Plate', arrivalsToday: 'Arrivals (Today)', arrivals7: 'Arrivals (7 Days)',
+        route: 'Route', station: 'Station', time: 'Time', empty: 'No records yet',
+      },
+      users: {
+        title: 'User Accounts', addBtn: '+ Add User',
+        name: 'Name', email: 'Email', role: 'Role',
+        formName: 'Name', formEmail: 'Email Address', formPassword: 'Password',
+        formPasswordEdit: 'New password (leave empty to keep unchanged)', formRole: 'Role',
+        addTitle: 'Add User',
+      },
+      audit: {
+        title: 'Audit Log',
+        user: 'User', action: 'Action', entity: 'Entity', time: 'Time',
+      },
+    },
   },
 };
 
