@@ -229,23 +229,45 @@ async function loadDrivers() {
   el.innerHTML = `<table><thead><tr><th>الاسم</th><th>الهاتف</th><th>رقم الرخصة</th><th>الحالة</th><th></th></tr></thead><tbody>
     ${drivers.map((d) => `<tr><td>${d.name}</td><td>${d.phone || '—'}</td><td>${d.license_number || '—'}</td>
       <td><span class="badge ${d.status === 'active' ? 'active' : 'inactive'}">${d.status === 'active' ? 'نشط' : 'موقوف'}</span></td>
-      <td>${canEdit ? `<button class="btn-danger" onclick="deleteDriver(${d.id})">حذف</button>` : ''}</td></tr>`).join('')}</tbody></table>`;
+      <td>${canEdit ? `<button class="btn-ghost" onclick="editDriver(${d.id})">تعديل</button><button class="btn-danger" onclick="deleteDriver(${d.id})">حذف</button>` : ''}</td></tr>`).join('')}</tbody></table>`;
 }
+function driverFormHtml(d = {}) {
+  return `<form id="driver-form"><div class="form-grid">
+    <div><label>اسم السائق</label><input name="name" value="${d.name || ''}" required /></div>
+    <div><label>رقم الهاتف</label><input name="phone" value="${d.phone || ''}" /></div>
+    <div><label>رقم رخصة القيادة</label><input name="license_number" value="${d.license_number || ''}" /></div>
+    ${d.id ? `<div><label>الحالة</label><select name="status">
+        <option value="active" ${d.status === 'active' ? 'selected' : ''}>نشط</option>
+        <option value="inactive" ${d.status === 'inactive' ? 'selected' : ''}>موقوف</option>
+      </select></div>` : ''}
+  </div><div class="form-actions"><button type="submit">${d.id ? 'حفظ التعديلات' : 'إضافة السائق'}</button><button type="button" onclick="closeForm('driver')">إلغاء</button></div></form>`;
+}
+
 document.getElementById('btn-add-driver').addEventListener('click', () => {
   const panel = document.getElementById('form-driver');
-  panel.innerHTML = `<form id="driver-form"><div class="form-grid">
-    <div><label>اسم السائق</label><input name="name" required /></div>
-    <div><label>رقم الهاتف</label><input name="phone" /></div>
-    <div><label>رقم رخصة القيادة</label><input name="license_number" /></div>
-  </div><div class="form-actions"><button type="submit">إضافة السائق</button><button type="button" onclick="closeForm('driver')">إلغاء</button></div></form>`;
+  panel.innerHTML = driverFormHtml();
   panel.classList.remove('hidden');
-  panel.querySelector('form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const body = Object.fromEntries(new FormData(e.target).entries());
-    try { await api('/drivers', { method: 'POST', body: JSON.stringify(body) }); closeForm('driver'); loadDrivers(); }
-    catch (err) { alert(err.message); }
-  });
+  panel.querySelector('form').addEventListener('submit', (e) => submitDriver(e));
 });
+
+window.editDriver = (id) => {
+  const driver = driversCache.find((d) => d.id === id);
+  if (!driver) return;
+  const panel = document.getElementById('form-driver');
+  panel.innerHTML = driverFormHtml(driver);
+  panel.classList.remove('hidden');
+  panel.querySelector('form').addEventListener('submit', (e) => submitDriver(e, id));
+};
+
+async function submitDriver(e, id) {
+  e.preventDefault();
+  const body = Object.fromEntries(new FormData(e.target).entries());
+  try {
+    if (id) await api('/drivers/' + id, { method: 'PUT', body: JSON.stringify(body) });
+    else await api('/drivers', { method: 'POST', body: JSON.stringify(body) });
+    closeForm('driver'); loadDrivers();
+  } catch (err) { alert(err.message); }
+}
 window.deleteDriver = async (id) => { if (!confirm('حذف هذا السائق؟')) return; await api('/drivers/' + id, { method: 'DELETE' }); loadDrivers(); };
 
 /* ---------------- التنبيهات ---------------- */
