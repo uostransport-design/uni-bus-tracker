@@ -348,32 +348,54 @@ async function loadIncidents() {
 window.resolveIncident = async (id) => { await api(`/incidents/${id}/resolve`, { method: 'PUT' }); loadIncidents(); };
 
 /* ---------------- المستخدمون ---------------- */
+let usersCache = [];
 async function loadUsers() {
   if (currentUser.role !== 'super_admin') return;
   const users = await api('/users');
+  usersCache = users;
   document.getElementById('table-users').innerHTML = `<table><thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th></th></tr></thead><tbody>
     ${users.map((u) => `<tr><td>${u.name}</td><td>${u.email}</td><td>${ROLE_LABELS[u.role] || u.role}</td>
-      <td>${u.id !== currentUser.id ? `<button class="btn-danger" onclick="deleteUser(${u.id})">حذف</button>` : '<span style="color:#94a3b8;font-size:12px">حسابك</span>'}</td></tr>`).join('')}</tbody></table>`;
+      <td><button class="btn-ghost" onclick="editUser(${u.id})">تعديل</button>${u.id !== currentUser.id ? `<button class="btn-danger" onclick="deleteUser(${u.id})">حذف</button>` : '<span style="color:#94a3b8;font-size:12px">حسابك</span>'}</td></tr>`).join('')}</tbody></table>`;
 }
+function userFormHtml(u = {}) {
+  const roleOption = (value, label) => `<option value="${value}" ${u.role === value ? 'selected' : ''}>${label}</option>`;
+  return `<form id="user-form"><div class="form-grid">
+    <div><label>الاسم</label><input name="name" value="${u.name || ''}" required /></div>
+    <div><label>البريد الإلكتروني</label><input name="email" type="email" value="${u.email || ''}" ${u.id ? 'readonly' : 'required'} /></div>
+    <div><label>${u.id ? 'كلمة مرور جديدة (اتركها فارغة لعدم التغيير)' : 'كلمة المرور'}</label><input name="password" type="password" ${u.id ? '' : 'required'} /></div>
+    <div><label>الدور</label><select name="role">
+      ${roleOption('viewer', 'مشاهدة فقط')}${roleOption('dispatcher', 'موظف تشغيل')}
+      ${roleOption('transport_manager', 'مدير النقل')}${roleOption('super_admin', 'مدير عام')}
+      ${roleOption('driver', 'سائق')}</select></div>
+  </div><div class="form-actions"><button type="submit">${u.id ? 'حفظ التعديلات' : 'إضافة المستخدم'}</button><button type="button" onclick="closeForm('user')">إلغاء</button></div></form>`;
+}
+
 document.getElementById('btn-add-user').addEventListener('click', () => {
   const panel = document.getElementById('form-user');
-  panel.innerHTML = `<form id="user-form"><div class="form-grid">
-    <div><label>الاسم</label><input name="name" required /></div>
-    <div><label>البريد الإلكتروني</label><input name="email" type="email" required /></div>
-    <div><label>كلمة المرور</label><input name="password" type="password" required /></div>
-    <div><label>الدور</label><select name="role">
-      <option value="viewer">مشاهدة فقط</option><option value="dispatcher">موظف تشغيل</option>
-      <option value="transport_manager">مدير النقل</option><option value="super_admin">مدير عام</option>
-      <option value="driver">سائق</option></select></div>
-  </div><div class="form-actions"><button type="submit">إضافة المستخدم</button><button type="button" onclick="closeForm('user')">إلغاء</button></div></form>`;
+  panel.innerHTML = userFormHtml();
   panel.classList.remove('hidden');
-  panel.querySelector('form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const body = Object.fromEntries(new FormData(e.target).entries());
-    try { await api('/users', { method: 'POST', body: JSON.stringify(body) }); closeForm('user'); loadUsers(); }
-    catch (err) { alert(err.message); }
-  });
+  panel.querySelector('form').addEventListener('submit', (e) => submitUser(e));
 });
+
+window.editUser = (id) => {
+  const user = usersCache.find((u) => u.id === id);
+  if (!user) return;
+  const panel = document.getElementById('form-user');
+  panel.innerHTML = userFormHtml(user);
+  panel.classList.remove('hidden');
+  panel.querySelector('form').addEventListener('submit', (e) => submitUser(e, id));
+};
+
+async function submitUser(e, id) {
+  e.preventDefault();
+  const body = Object.fromEntries(new FormData(e.target).entries());
+  if (id && !body.password) delete body.password; // لا ترسل كلمة مرور فارغة عند التعديل
+  try {
+    if (id) await api('/users/' + id, { method: 'PUT', body: JSON.stringify(body) });
+    else await api('/users', { method: 'POST', body: JSON.stringify(body) });
+    closeForm('user'); loadUsers();
+  } catch (err) { alert(err.message); }
+}
 window.deleteUser = async (id) => { if (!confirm('حذف هذا المستخدم؟')) return; try { await api('/users/' + id, { method: 'DELETE' }); loadUsers(); } catch (err) { alert(err.message); } };
 
 /* ---------------- سجل التدقيق ---------------- */
