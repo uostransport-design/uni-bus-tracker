@@ -127,31 +127,55 @@ async function submitVehicle(e, id) {
 window.deleteVehicle = async (id) => { if (!confirm('حذف هذه الحافلة نهائيًا؟')) return; await api('/vehicles/' + id, { method: 'DELETE' }); loadVehicles(); };
 
 /* ---------------- المحطات ---------------- */
+let stationsCache = [];
 async function loadStations() {
   const stations = await api('/stations');
+  stationsCache = stations;
   const el = document.getElementById('table-stations');
   if (!stations.length) { el.innerHTML = '<div class="empty">لا توجد محطات بعد</div>'; return; }
   el.innerHTML = `<table><thead><tr><th>الرمز</th><th>الاسم (عربي)</th><th>الاسم (إنجليزي)</th><th>خط العرض</th><th>خط الطول</th><th></th></tr></thead><tbody>
     ${stations.map((s) => `<tr><td>${s.code || '—'}</td><td>${s.name_ar}</td><td>${s.name_en}</td><td>${s.lat}</td><td>${s.lng}</td>
-      <td>${canEdit ? `<button class="btn-danger" onclick="deleteStation(${s.id})">حذف</button>` : ''}</td></tr>`).join('')}</tbody></table>`;
+      <td>${canEdit ? `<button class="btn-ghost" onclick="editStation(${s.id})">تعديل</button><button class="btn-danger" onclick="deleteStation(${s.id})">حذف</button>` : ''}</td></tr>`).join('')}</tbody></table>`;
 }
+function stationFormHtml(s = {}) {
+  return `<form id="station-form"><div class="form-grid">
+    <div><label>الرمز</label><input name="code" value="${s.code || ''}" placeholder="S13" /></div>
+    <div><label>الاسم بالعربية</label><input name="name_ar" value="${s.name_ar || ''}" required /></div>
+    <div><label>الاسم بالإنجليزية</label><input name="name_en" value="${s.name_en || ''}" required /></div>
+    <div><label>خط العرض (Latitude)</label><input name="lat" type="number" step="0.000001" value="${s.lat || ''}" required /></div>
+    <div><label>خط الطول (Longitude)</label><input name="lng" type="number" step="0.000001" value="${s.lng || ''}" required /></div>
+    ${s.id ? `<div><label>الحالة</label><select name="status">
+        <option value="active" ${s.status === 'active' ? 'selected' : ''}>نشطة</option>
+        <option value="inactive" ${s.status === 'inactive' ? 'selected' : ''}>موقوفة</option>
+      </select></div>` : ''}
+  </div><div class="form-actions"><button type="submit">${s.id ? 'حفظ التعديلات' : 'إضافة المحطة'}</button><button type="button" onclick="closeForm('station')">إلغاء</button></div></form>`;
+}
+
 document.getElementById('btn-add-station').addEventListener('click', () => {
   const panel = document.getElementById('form-station');
-  panel.innerHTML = `<form id="station-form"><div class="form-grid">
-    <div><label>الرمز</label><input name="code" placeholder="S13" /></div>
-    <div><label>الاسم بالعربية</label><input name="name_ar" required /></div>
-    <div><label>الاسم بالإنجليزية</label><input name="name_en" required /></div>
-    <div><label>خط العرض (Latitude)</label><input name="lat" type="number" step="0.000001" required /></div>
-    <div><label>خط الطول (Longitude)</label><input name="lng" type="number" step="0.000001" required /></div>
-  </div><div class="form-actions"><button type="submit">إضافة المحطة</button><button type="button" onclick="closeForm('station')">إلغاء</button></div></form>`;
+  panel.innerHTML = stationFormHtml();
   panel.classList.remove('hidden');
-  panel.querySelector('form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const body = Object.fromEntries(new FormData(e.target).entries());
-    try { await api('/stations', { method: 'POST', body: JSON.stringify(body) }); closeForm('station'); loadStations(); }
-    catch (err) { alert(err.message); }
-  });
+  panel.querySelector('form').addEventListener('submit', (e) => submitStation(e));
 });
+
+window.editStation = (id) => {
+  const station = stationsCache.find((s) => s.id === id);
+  if (!station) return;
+  const panel = document.getElementById('form-station');
+  panel.innerHTML = stationFormHtml(station);
+  panel.classList.remove('hidden');
+  panel.querySelector('form').addEventListener('submit', (e) => submitStation(e, id));
+};
+
+async function submitStation(e, id) {
+  e.preventDefault();
+  const body = Object.fromEntries(new FormData(e.target).entries());
+  try {
+    if (id) await api('/stations/' + id, { method: 'PUT', body: JSON.stringify(body) });
+    else await api('/stations', { method: 'POST', body: JSON.stringify(body) });
+    closeForm('station'); loadStations();
+  } catch (err) { alert(err.message); }
+}
 window.deleteStation = async (id) => { if (!confirm('حذف هذه المحطة؟ سيتم إزالتها من كل المسارات.')) return; await api('/stations/' + id, { method: 'DELETE' }); loadStations(); };
 
 /* ---------------- المسارات ---------------- */
