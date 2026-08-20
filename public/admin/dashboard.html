@@ -10,30 +10,31 @@
   <div class="app">
     <nav class="sidenav">
       <div class="brand">🚌 إدارة الحافلات</div>
-      <button class="nav-item active" data-tab="overview">نظرة عامة</button>
-      <button class="nav-item" data-tab="map">الخريطة الحية</button>
-      <button class="nav-item" data-tab="vehicles">المركبات</button>
-      <button class="nav-item" data-tab="stations">المحطات</button>
-      <button class="nav-item" data-tab="routes">المسارات</button>
-      <button class="nav-item" data-tab="drivers">السائقون</button>
-      <button class="nav-item" data-tab="alerts">التنبيهات</button>
-      <button class="nav-item" data-tab="announcements">الإعلانات</button>
-      <button class="nav-item" data-tab="incidents">البلاغات</button>
-      <button class="nav-item" data-tab="reports">التقارير</button>
-      <button class="nav-item" data-tab="users" id="nav-users">المستخدمون</button>
-      <button class="nav-item" data-tab="audit" id="nav-audit">سجل التدقيق</button>
+      <button class="nav-item active" data-tab="overview" data-i18n="admin.nav.overview">نظرة عامة</button>
+      <button class="nav-item" data-tab="map" data-i18n="admin.nav.map">الخريطة الحية</button>
+      <button class="nav-item" data-tab="vehicles" data-i18n="admin.nav.vehicles">المركبات</button>
+      <button class="nav-item" data-tab="stations" data-i18n="admin.nav.stations">المحطات</button>
+      <button class="nav-item" data-tab="routes" data-i18n="admin.nav.routes">المسارات</button>
+      <button class="nav-item" data-tab="drivers" data-i18n="admin.nav.drivers">السائقون</button>
+      <button class="nav-item" data-tab="alerts" data-i18n="admin.nav.alerts">التنبيهات</button>
+      <button class="nav-item" data-tab="announcements" data-i18n="admin.nav.announcements">الإعلانات</button>
+      <button class="nav-item" data-tab="incidents" data-i18n="admin.nav.incidents">البلاغات</button>
+      <button class="nav-item" data-tab="reports" data-i18n="admin.nav.reports">التقارير</button>
+      <button class="nav-item" data-tab="users" id="nav-users" data-i18n="admin.nav.users">المستخدمون</button>
+      <button class="nav-item" data-tab="audit" id="nav-audit" data-i18n="admin.nav.audit">سجل التدقيق</button>
       <div class="spacer"></div>
       <div class="user-box">
         <div id="user-name">—</div>
         <div id="user-role" class="role-badge">—</div>
-        <button id="change-pw-btn">تغيير كلمة المرور</button>
-        <button id="logout-btn">تسجيل الخروج</button>
+        <button id="lang-toggle">EN</button>
+        <button id="change-pw-btn" data-i18n="admin.changePassword">تغيير كلمة المرور</button>
+        <button id="logout-btn" data-i18n="admin.logout">تسجيل الخروج</button>
       </div>
     </nav>
 
     <main class="content">
       <section id="tab-overview" class="tab active">
-        <h2>نظرة عامة</h2>
+        <h2 data-i18n="admin.overview.title">نظرة عامة</h2>
         <div id="stats-grid" class="stats-grid"></div>
       </section>
 
@@ -42,66 +43,88 @@
       </section>
 
       <section id="tab-vehicles" class="tab">
-        <div class="tab-header"><h2>المركبات (الحافلات)</h2><button class="btn-primary" id="btn-add-vehicle">+ إضافة حافلة</button></div>
+        <div class="tab-header">
+          <h2 data-i18n="admin.vehicles.title">المركبات (الحافلات)</h2>
+          <button class="btn-primary" id="btn-add-vehicle" data-i18n="admin.vehicles.addBtn">+ إضافة حافلة</button>
+        </div>
         <div id="form-vehicle" class="form-panel hidden"></div>
         <div id="table-vehicles"></div>
       </section>
 
       <section id="tab-stations" class="tab">
-        <div class="tab-header"><h2>المحطات</h2><button class="btn-primary" id="btn-add-station">+ إضافة محطة</button></div>
+        <div class="tab-header">
+          <h2 data-i18n="admin.stations.title">المحطات</h2>
+          <button class="btn-primary" id="btn-add-station" data-i18n="admin.stations.addBtn">+ إضافة محطة</button>
+        </div>
         <div id="form-station" class="form-panel hidden"></div>
         <div id="table-stations"></div>
       </section>
 
       <section id="tab-routes" class="tab">
-        <div class="tab-header"><h2>المسارات</h2><button class="btn-primary" id="btn-add-route">+ إضافة مسار</button></div>
+        <div class="tab-header">
+          <h2 data-i18n="admin.routes.title">المسارات</h2>
+          <button class="btn-primary" id="btn-add-route" data-i18n="admin.routes.addBtn">+ إضافة مسار</button>
+        </div>
         <div id="form-route" class="form-panel hidden"></div>
         <div id="routes-list"></div>
       </section>
 
       <section id="tab-drivers" class="tab">
-        <div class="tab-header"><h2>السائقون</h2><button class="btn-primary" id="btn-add-driver">+ إضافة سائق</button></div>
+        <div class="tab-header">
+          <h2 data-i18n="admin.drivers.title">السائقون</h2>
+          <button class="btn-primary" id="btn-add-driver" data-i18n="admin.drivers.addBtn">+ إضافة سائق</button>
+        </div>
         <div id="form-driver" class="form-panel hidden"></div>
         <div id="table-drivers"></div>
       </section>
 
       <section id="tab-alerts" class="tab">
-        <h2>التنبيهات</h2>
+        <h2 data-i18n="admin.alerts.title">التنبيهات</h2>
         <div id="table-alerts"></div>
       </section>
 
       <section id="tab-announcements" class="tab">
-        <div class="tab-header"><h2>الإعلانات (تظهر في شاشات المحطات)</h2><button class="btn-primary" id="btn-add-announcement">+ إعلان جديد</button></div>
+        <div class="tab-header">
+          <h2 data-i18n="admin.announcements.title">الإعلانات (تظهر في شاشات المحطات)</h2>
+          <button class="btn-primary" id="btn-add-announcement" data-i18n="admin.announcements.addBtn">+ إعلان جديد</button>
+        </div>
         <div id="form-announcement" class="form-panel hidden"></div>
         <div id="table-announcements"></div>
       </section>
 
       <section id="tab-incidents" class="tab">
-        <h2>بلاغات السائقين</h2>
+        <h2 data-i18n="admin.incidents.title">بلاغات السائقين</h2>
         <div id="table-incidents"></div>
       </section>
 
       <section id="tab-reports" class="tab">
-        <div class="tab-header"><h2>التقارير</h2><a class="btn-primary" id="export-csv" href="#" target="_blank" style="text-decoration:none">⬇ تصدير CSV / Excel</a></div>
-        <h3>ملخص آخر 7 أيام</h3>
+        <div class="tab-header">
+          <h2 data-i18n="admin.reports.title">التقارير</h2>
+          <a class="btn-primary" id="export-csv" href="#" target="_blank" style="text-decoration:none" data-i18n="admin.reports.exportCsv">⬇ تصدير CSV / Excel</a>
+        </div>
+        <h3 data-i18n="admin.reports.summaryTitle">ملخص آخر 7 أيام</h3>
         <div id="table-summary"></div>
-        <h3>سجل الوصول للمحطات</h3>
+        <h3 data-i18n="admin.reports.arrivalsTitle">سجل الوصول للمحطات</h3>
         <div id="table-arrivals"></div>
       </section>
 
       <section id="tab-users" class="tab">
-        <div class="tab-header"><h2>حسابات المستخدمين</h2><button class="btn-primary" id="btn-add-user">+ إضافة مستخدم</button></div>
+        <div class="tab-header">
+          <h2 data-i18n="admin.users.title">حسابات المستخدمين</h2>
+          <button class="btn-primary" id="btn-add-user" data-i18n="admin.users.addBtn">+ إضافة مستخدم</button>
+        </div>
         <div id="form-user" class="form-panel hidden"></div>
         <div id="table-users"></div>
       </section>
 
       <section id="tab-audit" class="tab">
-        <h2>سجل التدقيق (Audit Log)</h2>
+        <h2 data-i18n="admin.audit.title">سجل التدقيق (Audit Log)</h2>
         <div id="table-audit"></div>
       </section>
     </main>
   </div>
 
+  <script src="../js/i18n.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>
