@@ -1,70 +1,122 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>تطبيق السائق — حافلات جامعة الشارقة</title>
-<style>
-  :root { --gold: #d4a017; --navy: #0b1220; --card: #111c33; --border: #1e2b47; --text: #f1f5f9; --muted: #94a3b8; --green: #16a34a; --red: #dc2626; }
-  * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; background: var(--navy); color: var(--text); font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
-  header { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; border-bottom: 1px solid var(--border); }
-  header h1 { font-size: 16px; margin: 0; }
-  #logout { background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
-  main { padding: 18px; max-width: 480px; margin: 0 auto; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
-  select, button { width: 100%; padding: 13px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; margin-bottom: 10px; }
-  select { background: #0c1730; color: var(--text); border: 1px solid var(--border); }
-  button.gold { background: var(--gold); color: #1a1a1a; }
-  button.green { background: var(--green); color: white; }
-  button.red { background: var(--red); color: white; }
-  button.ghost { background: #0c1730; color: var(--text); border: 1px solid var(--border); }
-  .status-line { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
-  .trip-info h2 { font-size: 15px; margin: 0 0 4px; }
-  .trip-info .stations { font-size: 13.5px; color: #cbd5e1; margin: 10px 0; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  #msg { font-size: 13px; margin-bottom: 12px; padding: 10px; border-radius: 8px; display: none; }
-  #msg.ok { background: #14532d; color: #86efac; display: block; }
-  #msg.err { background: #7f1d1d; color: #fca5a5; display: block; }
-  .share-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #64748b; margin-left: 6px; }
-  .share-dot.on { background: var(--green); }
-</style>
-</head>
-<body>
-  <header>
-    <h1 id="driver-name">تطبيق السائق</h1>
-    <button id="logout">خروج</button>
-  </header>
+// driver/app.js — منطق تطبيق السائق مع دعم اللغتين
 
-  <main>
-    <div id="msg"></div>
+applyLang();
+document.getElementById('lang-toggle').addEventListener('click', () => setLang(getLang() === 'ar' ? 'en' : 'ar'));
+document.addEventListener('langchange', () => { updateShareButton(); if (typeof loadState === 'function') loadState(); });
 
-    <div id="no-trip-view" class="card" style="display:none">
-      <p class="status-line">اختر الحافلة التي ستقودها الآن</p>
-      <select id="bus-select"></select>
-      <button class="gold" id="start-trip-btn">🚌 بدء الرحلة</button>
-    </div>
+const token = localStorage.getItem('bus_driver_token');
+const user = JSON.parse(localStorage.getItem('bus_driver_user') || 'null');
+if (!token || !user) window.location.href = '/driver/login.html';
 
-    <div id="trip-view" class="card" style="display:none">
-      <div class="trip-info">
-        <h2 id="trip-bus-name">—</h2>
-        <div class="status-line" id="trip-route-name">—</div>
-        <div class="stations" id="trip-stations">—</div>
-      </div>
+document.getElementById('logout').addEventListener('click', () => {
+  stopSharing();
+  localStorage.removeItem('bus_driver_token');
+  localStorage.removeItem('bus_driver_user');
+  window.location.href = '/driver/login.html';
+});
 
-      <button class="green" id="share-toggle">📍 بدء مشاركة الموقع <span class="share-dot" id="share-dot"></span></button>
-      <button class="ghost" id="end-trip-btn">إنهاء الرحلة</button>
+async function api(path, opts = {}) {
+  const res = await fetch('/api/driver' + path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, ...(opts.headers || {}) },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'حدث خطأ');
+  return data;
+}
 
-      <div class="grid2">
-        <button class="ghost" onclick="reportIncident('breakdown')">🔧 عطل</button>
-        <button class="ghost" onclick="reportIncident('congestion')">🚦 ازدحام</button>
-        <button class="ghost" onclick="reportIncident('accident')">⚠️ حادث</button>
-        <button class="red" onclick="reportIncident('emergency')">🆘 طارئ</button>
-      </div>
-      <button class="ghost" id="out-of-service-btn" style="margin-top:10px">إيقاف الحافلة عن الخدمة</button>
-    </div>
-  </main>
+function showMsg(text, ok = true) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = ok ? 'ok' : 'err';
+  setTimeout(() => { el.className = ''; }, 4000);
+}
 
-  <script src="app.js"></script>
-</body>
-</html>
+let watchId = null;
+let sharing = false;
+
+function startSharing() {
+  if (!navigator.geolocation) return showMsg('المتصفح لا يدعم تحديد الموقع', false);
+  watchId = navigator.geolocation.watchPosition(
+    async (pos) => {
+      try {
+        await api('/location', {
+          method: 'POST',
+          body: JSON.stringify({
+            lat: pos.coords.latitude, lng: pos.coords.longitude,
+            speed: pos.coords.speed ? pos.coords.speed * 3.6 : 0,
+            heading: pos.coords.heading || 0,
+          }),
+        });
+      } catch (e) { console.error(e.message); }
+    },
+    (err) => showMsg('تعذّر الوصول للموقع: ' + err.message, false),
+    { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+  );
+  sharing = true;
+  updateShareButton();
+}
+
+function stopSharing() {
+  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+  watchId = null; sharing = false;
+  updateShareButton();
+}
+
+function updateShareButton() {
+  const btn = document.getElementById('share-toggle');
+  if (!btn) return;
+  const label = sharing ? t().shareLocationStop : t().shareLocationStart;
+  const dotClass = sharing ? 'share-dot on' : 'share-dot';
+  btn.innerHTML = `<span>${label}</span> <span class="${dotClass}" id="share-dot"></span>`;
+}
+
+document.getElementById('share-toggle')?.addEventListener('click', () => sharing ? stopSharing() : startSharing());
+
+async function loadState() {
+  const { trip, bus, route, stations } = await api('/trip/active');
+  if (!trip) {
+    document.getElementById('no-trip-view').style.display = 'block';
+    document.getElementById('trip-view').style.display = 'none';
+    const buses = await api('/vehicles');
+    const lang = getLang();
+    document.getElementById('bus-select').innerHTML = buses.map((b) => {
+      const routeName = lang === 'ar' ? (b.route_name_ar || t().noRoute) : (b.route_name_en || t().noRoute);
+      return `<option value="${b.id}">${b.name} — ${routeName}</option>`;
+    }).join('');
+  } else {
+    document.getElementById('no-trip-view').style.display = 'none';
+    document.getElementById('trip-view').style.display = 'block';
+    const lang = getLang();
+    document.getElementById('trip-bus-name').textContent = bus.name + (bus.plate_number ? ' — ' + bus.plate_number : '');
+    document.getElementById('trip-route-name').textContent = route ? (lang === 'ar' ? route.name_ar : route.name_en) : t().noRoute;
+    document.getElementById('trip-stations').innerHTML = stations.map((s) => (lang === 'ar' ? s.name_ar : s.name_en)).join(' ← ');
+    startSharing();
+  }
+}
+
+document.getElementById('start-trip-btn')?.addEventListener('click', async () => {
+  const busId = document.getElementById('bus-select').value;
+  try { await api('/trip/start', { method: 'POST', body: JSON.stringify({ bus_id: busId }) }); showMsg(t().tripStartedMsg); loadState(); }
+  catch (e) { showMsg(e.message, false); }
+});
+
+document.getElementById('end-trip-btn')?.addEventListener('click', async () => {
+  if (!confirm(t().confirmEndTrip)) return;
+  stopSharing();
+  try { await api('/trip/end', { method: 'POST' }); showMsg(t().tripEndedMsg); loadState(); }
+  catch (e) { showMsg(e.message, false); }
+});
+
+document.getElementById('out-of-service-btn')?.addEventListener('click', async () => {
+  try { await api('/status', { method: 'PUT', body: JSON.stringify({ status: 'out_of_service' }) }); showMsg(t().outOfServiceMsg); }
+  catch (e) { showMsg(e.message, false); }
+});
+
+window.reportIncident = async (type) => {
+  const note = prompt(getLang() === 'ar' ? 'تفاصيل إضافية (اختياري):' : 'Additional details (optional):');
+  try { await api('/incident', { method: 'POST', body: JSON.stringify({ type, note }) }); showMsg(t().incidentSentMsg); }
+  catch (e) { showMsg(e.message, false); }
+};
+
+loadState();
