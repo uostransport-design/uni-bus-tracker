@@ -161,9 +161,9 @@ async function loadRoutes() {
   routesCache = routes; stationsMasterCache = stations;
   const el = document.getElementById('routes-list');
   if (!routes.length) { el.innerHTML = '<div class="empty">لا توجد مسارات بعد</div>'; return; }
-  el.innerHTML = routes.map((r) => `<div class="route-card">
+   el.innerHTML = routes.map((r) => `<div class="route-card">
       <div class="route-title"><strong style="color:${r.color}">● ${r.name_ar} / ${r.name_en}</strong>
-        ${canEdit ? `<div><button class="btn-ghost" onclick="addStationToRoute(${r.id})">+ إضافة محطة</button><button class="btn-ghost" onclick="window.location.href='route-editor.html?route=${r.id}'">🖊️ رسم يدوي</button><button class="btn-danger" onclick="deleteRoute(${r.id})">حذف المسار</button></div>` : ''}</div>
+        ${canEdit ? `<div><button class="btn-ghost" onclick="editRoute(${r.id})">✏️ تعديل</button><button class="btn-ghost" onclick="addStationToRoute(${r.id})">+ إضافة محطة</button><button class="btn-ghost" onclick="window.location.href='route-editor.html?route=${r.id}'">🖊️ رسم يدوي</button><button class="btn-danger" onclick="deleteRoute(${r.id})">حذف المسار</button></div>` : ''}</div>
       <table><thead><tr><th>#</th><th>المحطة</th><th></th></tr></thead><tbody>
         ${r.stations.map((s) => `<tr><td>${s.sequence}</td><td>${s.name_ar} / ${s.name_en}</td>
           <td>${canEdit ? `<button class="btn-danger" onclick="removeStationFromRoute(${r.id}, ${s.id})">إزالة</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="3" class="empty">لا توجد محطات في هذا المسار</td></tr>'}
