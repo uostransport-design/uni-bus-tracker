@@ -169,23 +169,45 @@ async function loadRoutes() {
           <td>${canEdit ? `<button class="btn-danger" onclick="removeStationFromRoute(${r.id}, ${s.id})">إزالة</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="3" class="empty">لا توجد محطات في هذا المسار</td></tr>'}
       </tbody></table></div>`).join('');
 }
+function routeFormHtml(r = {}) {
+  return `<form id="route-form"><div class="form-grid">
+    <div><label>الاسم بالعربية</label><input name="name_ar" value="${r.name_ar || ''}" required /></div>
+    <div><label>الاسم بالإنجليزية</label><input name="name_en" value="${r.name_en || ''}" required /></div>
+    <div><label>اللون</label><input name="color" type="color" value="${r.color || '#2563eb'}" /></div>
+    <div><label>وقت البدء</label><input name="start_time" type="time" value="${r.start_time || '07:00'}" /></div>
+    <div><label>وقت الانتهاء</label><input name="end_time" type="time" value="${r.end_time || '22:00'}" /></div>
+    ${r.id ? `<div><label>الحالة</label><select name="status">
+        <option value="active" ${r.status === 'active' ? 'selected' : ''}>نشط</option>
+        <option value="inactive" ${r.status === 'inactive' ? 'selected' : ''}>موقوف</option>
+      </select></div>` : ''}
+  </div><div class="form-actions"><button type="submit">${r.id ? 'حفظ التعديلات' : 'إضافة المسار'}</button><button type="button" onclick="closeForm('route')">إلغاء</button></div></form>`;
+}
+
 document.getElementById('btn-add-route').addEventListener('click', () => {
   const panel = document.getElementById('form-route');
-  panel.innerHTML = `<form id="route-form"><div class="form-grid">
-    <div><label>الاسم بالعربية</label><input name="name_ar" required /></div>
-    <div><label>الاسم بالإنجليزية</label><input name="name_en" required /></div>
-    <div><label>اللون</label><input name="color" type="color" value="#2563eb" /></div>
-    <div><label>وقت البدء</label><input name="start_time" type="time" value="07:00" /></div>
-    <div><label>وقت الانتهاء</label><input name="end_time" type="time" value="22:00" /></div>
-  </div><div class="form-actions"><button type="submit">إضافة المسار</button><button type="button" onclick="closeForm('route')">إلغاء</button></div></form>`;
+  panel.innerHTML = routeFormHtml();
   panel.classList.remove('hidden');
-  panel.querySelector('form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const body = Object.fromEntries(new FormData(e.target).entries());
-    try { await api('/routes', { method: 'POST', body: JSON.stringify(body) }); closeForm('route'); loadRoutes(); }
-    catch (err) { alert(err.message); }
-  });
+  panel.querySelector('form').addEventListener('submit', (e) => submitRoute(e));
 });
+
+window.editRoute = (id) => {
+  const route = routesCache.find((r) => r.id === id);
+  if (!route) return;
+  const panel = document.getElementById('form-route');
+  panel.innerHTML = routeFormHtml(route);
+  panel.classList.remove('hidden');
+  panel.querySelector('form').addEventListener('submit', (e) => submitRoute(e, id));
+};
+
+async function submitRoute(e, id) {
+  e.preventDefault();
+  const body = Object.fromEntries(new FormData(e.target).entries());
+  try {
+    if (id) await api('/routes/' + id, { method: 'PUT', body: JSON.stringify(body) });
+    else await api('/routes', { method: 'POST', body: JSON.stringify(body) });
+    closeForm('route'); loadRoutes();
+  } catch (err) { alert(err.message); }
+}
 window.addStationToRoute = async (routeId) => {
   if (!stationsMasterCache.length) stationsMasterCache = await api('/stations');
   const names = stationsMasterCache.map((s, i) => `${i + 1}. ${s.name_ar} / ${s.name_en}`).join('\n');
