@@ -132,6 +132,7 @@ router.get('/routes', (req, res) => {
   const routes = db.prepare('SELECT * FROM routes ORDER BY id ASC').all();
   const withStations = routes.map((r) => ({
     ...r,
+    geometry: r.geometry ? JSON.parse(r.geometry) : null,
     stations: db.prepare(
       `SELECT s.id, s.name_ar, s.name_en, s.lat, s.lng, rs.sequence, rs.dwell_seconds
        FROM route_stations rs JOIN stations s ON s.id=rs.station_id
