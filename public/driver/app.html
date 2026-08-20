@@ -5,10 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>تطبيق السائق — حافلات جامعة الشارقة</title>
 <style>
-  :root { --gold: #d4a017; --navy: #0b1220; --card: #111c33; --border: #1e2b47; --text: #f1f5f9; --muted: #94a3b8; --green: #16a34a; --red: #dc2626; }
+  :root {
+    --brand: #2eb386; --brand-dark: #1f8a68; --brand-darker: #145c46;
+    --navy: #0b1220; --card: #111c33; --border: #1e2b47; --text: #f1f5f9; --muted: #94a3b8; --red: #dc2626;
+  }
   * { box-sizing: border-box; }
   body { margin: 0; min-height: 100vh; background: var(--navy); color: var(--text); font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
-  header { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+  header { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .header-brand { display: flex; align-items: center; gap: 10px; }
+  .header-brand img { width: 34px; height: 34px; border-radius: 8px; }
   header h1 { font-size: 16px; margin: 0; }
   .header-actions { display: flex; gap: 8px; }
   #lang-toggle, #logout { background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
@@ -16,8 +21,8 @@
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
   select, button { width: 100%; padding: 13px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; margin-bottom: 10px; }
   select { background: #0c1730; color: var(--text); border: 1px solid var(--border); }
-  button.gold { background: var(--gold); color: #1a1a1a; }
-  button.green { background: var(--green); color: white; }
+  button.brand { background: var(--brand); color: white; }
+  button.brand:hover { background: var(--brand-dark); }
   button.red { background: var(--red); color: white; }
   button.ghost { background: #0c1730; color: var(--text); border: 1px solid var(--border); }
   .status-line { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
@@ -28,12 +33,15 @@
   #msg.ok { background: #14532d; color: #86efac; display: block; }
   #msg.err { background: #7f1d1d; color: #fca5a5; display: block; }
   .share-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #64748b; margin-left: 6px; }
-  .share-dot.on { background: var(--green); }
+  .share-dot.on { background: var(--brand); }
 </style>
 </head>
 <body>
   <header>
-    <h1 id="driver-name" data-i18n="driverAppTitle">تطبيق السائق</h1>
+    <div class="header-brand">
+      <img src="/assets/logo-icon-only-512.png" alt="UOS" />
+      <h1 id="driver-name" data-i18n="driverAppTitle">تطبيق السائق</h1>
+    </div>
     <div class="header-actions">
       <button id="lang-toggle">EN</button>
       <button id="logout" data-i18n="logout">خروج</button>
@@ -46,7 +54,7 @@
     <div id="no-trip-view" class="card" style="display:none">
       <p class="status-line" data-i18n="chooseBus">اختر الحافلة التي ستقودها الآن</p>
       <select id="bus-select"></select>
-      <button class="gold" id="start-trip-btn" data-i18n="startTrip">🚌 بدء الرحلة</button>
+      <button class="brand" id="start-trip-btn" data-i18n="startTrip">🚌 بدء الرحلة</button>
     </div>
 
     <div id="trip-view" class="card" style="display:none">
@@ -56,7 +64,7 @@
         <div class="stations" id="trip-stations">—</div>
       </div>
 
-      <button class="green" id="share-toggle"><span data-i18n="shareLocationStart">📍 بدء مشاركة الموقع</span> <span class="share-dot" id="share-dot"></span></button>
+      <button class="brand" id="share-toggle"><span data-i18n="shareLocationStart">📍 بدء مشاركة الموقع</span> <span class="share-dot" id="share-dot"></span></button>
       <button class="ghost" id="end-trip-btn" data-i18n="endTrip">إنهاء الرحلة</button>
 
       <div class="grid2">
