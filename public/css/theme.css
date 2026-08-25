@@ -1,0 +1,29 @@
+/* theme.css — ملف الألوان المشترك لكل صفحات المنصة (شاشات الدخول والصفحة الرئيسية)
+   عدّلي أي لون هنا مرة وحدة، وينعكس تلقائيًا على كل الصفحات المرتبطة بهذا الملف */
+
+:root {
+  --brand: #2eb386;
+  --brand-dark: #1f8a68;
+  --brand-darker: #145c46;
+}
+
+body {
+  background: linear-gradient(135deg, #5ec9a3 0%, #8fdcc0 55%, #c9f0e0 100%) !important;
+  color: var(--brand-darker) !important;
+}
+
+/* الصفحة الرئيسية: نص البطاقة والأزرار */
+.card p { color: #2f5e4d !important; }
+.card h1 { color: var(--brand-darker) !important; }
+.btn.secondary {
+  background: rgba(20,92,70,.08) !important;
+  color: var(--brand-darker) !important;
+  border: 1px solid rgba(20,92,70,.25) !important;
+}
+
+/* زر تبديل اللغة (يظهر بكل الصفحات) */
+.lang-btn {
+  background: rgba(20,92,70,.1) !important;
+  color: var(--brand-darker) !important;
+  border: 1px solid rgba(20,92,70,.3) !important;
+}
