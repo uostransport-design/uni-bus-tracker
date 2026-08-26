@@ -172,3 +172,8 @@ try {
 } catch (e) {
   // العمود موجود بالفعل — لا حاجة لفعل شيء
 }
+try {
+  db.exec("ALTER TABLE buses ADD COLUMN color TEXT DEFAULT '#2eb386'");
+} catch (e) {
+  // العمود موجود بالفعل — لا حاجة لفعل شيء
+}
