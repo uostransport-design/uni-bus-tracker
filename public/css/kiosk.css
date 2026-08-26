@@ -1,1 +1,62 @@
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
+body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: #0f2e24; overflow: hidden; height: 100vh; }
+.screen { position: relative; width: 100%; height: 100vh; overflow: hidden; }
 
+/* ---------- الحالة الافتراضية ---------- */
+#idle-view {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 30% 20%, #1f8a68, #0f2e24 65%); cursor: pointer;
+}
+.logo-big { width: 90px; height: 90px; border-radius: 20px; background: white; padding: 10px; margin-bottom: 24px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
+.logo-big img { width: 100%; height: 100%; object-fit: contain; }
+#idle-view h1 { color: white; font-size: 34px; font-weight: 800; margin-bottom: 10px; }
+#idle-view p { color: #a7f3d0; font-size: 16px; margin-bottom: 50px; }
+.tap-prompt { display: flex; flex-direction: column; align-items: center; gap: 14px; animation: pulse 1.8s ease-in-out infinite; }
+.tap-circle { width: 110px; height: 110px; border-radius: 50%; background: rgba(255,255,255,.12); border: 2px solid #c9a668; display: flex; align-items: center; justify-content: center; font-size: 42px; }
+.tap-prompt span { color: #c9a668; font-size: 17px; font-weight: 700; }
+@keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: .85; } }
+.lang-btn-kiosk { position: absolute; top: 24px; left: 24px; background: rgba(255,255,255,.12); color: #c9a668; border: 1px solid rgba(255,255,255,.3); border-radius: 10px; padding: 10px 18px; font-size: 14px; font-weight: 700; cursor: pointer; }
+[dir="rtl"] .lang-btn-kiosk { left: auto; right: 24px; }
+
+/* ---------- اختيار الوجهة ---------- */
+#destinations-view { position: absolute; inset: 0; background: #f2fbf7; display: none; flex-direction: column; }
+#destinations-view.active { display: flex; }
+.kiosk-header { display: flex; align-items: center; justify-content: space-between; padding: 24px 40px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+.kiosk-header .title { font-size: 24px; font-weight: 800; color: #145c46; }
+.kiosk-header .subtitle { font-size: 14px; color: #5a8a76; margin-top: 4px; }
+.close-btn { width: 54px; height: 54px; border-radius: 50%; background: #eafaf4; border: none; font-size: 24px; color: #145c46; cursor: pointer; }
+
+.dest-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; padding: 34px 40px; overflow-y: auto; align-content: start; }
+.dest-card {
+  background: white; border-radius: 20px; padding: 26px 20px; cursor: pointer; text-align: center;
+  box-shadow: 0 6px 20px rgba(20,92,70,.08); border: 2px solid transparent; transition: transform .15s;
+}
+.dest-card:active { transform: scale(.96); border-color: #2eb386; }
+.dest-card .dest-icon { font-size: 40px; margin-bottom: 12px; }
+.dest-card h3 { font-size: 16.5px; font-weight: 700; color: #14352b; }
+.dest-empty { grid-column: 1/-1; text-align: center; color: #5a8a76; padding: 60px; font-size: 16px; }
+
+/* ---------- نتيجة الوجهة: الحافلات القادمة ---------- */
+#arrivals-view { position: absolute; inset: 0; display: none; flex-direction: column; background: #f2fbf7; }
+#arrivals-view.active { display: flex; }
+.arrivals-header { padding: 28px 40px; background: #145c46; color: white; }
+.arrivals-header .back-btn { background: rgba(255,255,255,.2); border: none; color: white; padding: 10px 20px; border-radius: 30px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 16px; }
+.arrivals-header .dest-title { font-size: 15px; opacity: .85; }
+.arrivals-header h2 { font-size: 28px; font-weight: 800; margin-top: 4px; }
+
+.arrivals-list { flex: 1; padding: 30px 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+.arrival-card {
+  background: white; border-radius: 18px; padding: 24px 28px; display: flex; align-items: center; gap: 22px;
+  box-shadow: 0 6px 20px rgba(20,92,70,.08); border-inline-start: 8px solid #2eb386;
+}
+.arrival-bus-circle {
+  width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 800; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+.arrival-info { flex: 1; }
+.arrival-info .route-name { font-size: 14px; color: #5a8a76; font-weight: 600; }
+.arrival-info .bus-name { font-size: 18px; font-weight: 800; color: #14352b; margin-top: 2px; }
+.arrival-eta { text-align: center; min-width: 70px; }
+.arrival-eta .num { font-size: 38px; font-weight: 900; color: #145c46; line-height: 1; }
+.arrival-eta .unit { font-size: 13px; color: #5a8a76; font-weight: 700; margin-top: 2px; }
+.no-buses { text-align: center; color: #5a8a76; font-size: 16px; margin-top: 60px; }
