@@ -2,7 +2,6 @@
 
 applyLang();
 
-// قراءة رقم المحطة من الرابط /station/:id إن وُجد
 const stationMatch = window.location.pathname.match(/\/station\/(\d+)/);
 let activeStationId = stationMatch ? Number(stationMatch[1]) : null;
 
@@ -16,21 +15,33 @@ const busMarkers = {};
 
 function busNumber(name) { const m = name.match(/(\d+)/); return m ? m[1] : '•'; }
 
+const BUS_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM6 11V6h12v5H6z"/></svg>';
+
 function busIcon(bus) {
-  return L.divIcon({
-    className: '',
-    html: `<div class="bus-marker-label ${bus.status}">${busNumber(bus.name)}</div>`,
-    iconSize: [34, 34],
-  });
+  const lang = getLang();
+  const routeColor = (bus.route && bus.route.color) || '#2eb386';
+  const isDelayed = bus.status === 'delayed';
+  const isEmergency = bus.status === 'emergency';
+  const showLabel = isDelayed || isEmergency;
+  const labelText = isEmergency ? (lang === 'ar' ? 'طارئ' : 'Emergency') : (lang === 'ar' ? 'متأخرة' : 'Delayed');
+  const labelClass = isEmergency ? 'bus-delay-label emergency' : 'bus-delay-label';
+
+  const html = `
+    <div class="bus-marker-wrap">
+      <div class="bus-icon-circle" style="background:${routeColor}">${BUS_SVG}</div>
+      ${showLabel ? `<div class="${labelClass}">${labelText}</div>` : ''}
+    </div>`;
+
+  return L.divIcon({ className: '', html, iconSize: showLabel ? [100, 56] : [34, 34], iconAnchor: showLabel ? [50, 17] : [17, 17] });
 }
-const stationIcon = L.divIcon({ className: '', html: '<div class="station-marker"></div>', iconSize: [12, 12] });
+
+const STATION_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="#c9a668"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
+const stationIcon = L.divIcon({ className: '', html: `<div class="station-pin">${STATION_SVG}</div>`, iconSize: [20, 20], iconAnchor: [10, 20] });
 
 async function loadRoutes() {
   routesCache = await (await fetch('/api/routes')).json();
   routesCache.forEach((route) => {
-    const latlngs = (route.geometry && route.geometry.length > 1)
-      ? route.geometry
-      : route.stations.map((s) => [s.lat, s.lng]);
+    const latlngs = (route.geometry && route.geometry.length > 1) ? route.geometry : route.stations.map((s) => [s.lat, s.lng]);
     if (latlngs.length > 1) L.polyline(latlngs, { color: route.color, weight: 4, opacity: 0.75 }).addTo(map);
   });
 }
@@ -87,7 +98,7 @@ function renderBusList() {
   if (!list.length) { el.innerHTML = `<div class="empty-state">${t().noBuses}</div>`; return; }
 
   el.innerHTML = list.map((b) => `
-    <div class="bus-card">
+    <div class="bus-card" style="border-inline-start-color:${(b.route && b.route.color) || '#2eb386'}">
       <div class="row1">
         <span class="bus-num">Bus ${busNumber(b.name)}</span>
         <span class="badge ${b.status}">${t().status[b.status] || b.status}</span>
@@ -127,6 +138,10 @@ document.addEventListener('langchange', () => {
   populateStationFilter();
   renderBusList();
   loadTicker();
+  Object.entries(busMarkers).forEach(([id, marker]) => {
+    const bus = busesCache.find((b) => b.id == id);
+    if (bus) marker.setIcon(busIcon(bus));
+  });
 });
 
 /* ---------------- الاتصال اللحظي ---------------- */
