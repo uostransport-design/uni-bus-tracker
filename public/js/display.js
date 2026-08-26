@@ -19,7 +19,7 @@ const BUS_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="white"><p
 
 function busIcon(bus) {
   const lang = getLang();
-  const routeColor = (bus.route && bus.route.color) || '#2eb386';
+    const routeColor = bus.color || '#2eb386';
   const isDelayed = bus.status === 'delayed';
   const isEmergency = bus.status === 'emergency';
   const showLabel = isDelayed || isEmergency;
