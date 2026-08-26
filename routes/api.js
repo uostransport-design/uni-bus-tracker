@@ -32,20 +32,21 @@ router.get('/stations', (req, res) => {
   res.json(db.prepare('SELECT * FROM stations ORDER BY name_en ASC').all());
 });
 
-router.get('/buses', (req, res) => {
-  const buses = db.prepare('SELECT * FROM buses').all();
+router.get('/stations/:id/buses', (req, res) => {
+  const stationId = Number(req.params.id);
+  const station = db.prepare('SELECT * FROM stations WHERE id=?').get(stationId);
+  const buses = db.prepare('SELECT * FROM buses WHERE next_station_id = ?').all(stationId);
   const enriched = buses.map((b) => {
-    const nextStation = b.next_station_id ? db.prepare('SELECT * FROM stations WHERE id=?').get(b.next_station_id) : null;
-    const currentStation = b.current_station_id ? db.prepare('SELECT * FROM stations WHERE id=?').get(b.current_station_id) : null;
     const route = b.route_id ? db.prepare('SELECT * FROM routes WHERE id=?').get(b.route_id) : null;
     const { device_key, ...safe } = b;
     let _etaSeconds = null;
-    if (nextStation && b.current_lat != null && b.current_lng != null) {
-      const dist = haversineMeters(b.current_lat, b.current_lng, nextStation.lat, nextStation.lng);
+    if (station && b.current_lat != null && b.current_lng != null) {
+      const dist = haversineMeters(b.current_lat, b.current_lng, station.lat, station.lng);
       _etaSeconds = estimateEtaSeconds(dist, b.current_speed);
     }
-    return { ...safe, nextStation, currentStation, route, _etaSeconds, statusLabel: STATUS_LABELS[b.status] || { ar: b.status, en: b.status } };
+    return { ...safe, route, _etaSeconds, statusLabel: STATUS_LABELS[b.status] || { ar: b.status, en: b.status } };
   });
+  enriched.sort((a, b) => (a._etaSeconds ?? 1e9) - (b._etaSeconds ?? 1e9));
   res.json(enriched);
 });
 
