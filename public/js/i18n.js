@@ -16,6 +16,11 @@ const I18N = {
     driverLogin: 'دخول السائقين',
     trackBuses: 'تتبع الحافلات',
     noBuses: 'لا توجد حافلات قادمة إلى هذه المحطة حاليًا',
+    kiosk: {
+      idleTitle: 'تتبع حافلات الجامعة', idleSubtitle: 'خدمة النقل الداخلي — جامعة الشارقة',
+      tapPrompt: 'المس الشاشة لمعرفة موعد حافلتك', chooseDest: 'وين تبي توصل؟', chooseDestSub: 'اختر المبنى أو الكلية',
+      backToDest: 'رجوع لاختيار وجهة ثانية', arrivingTo: 'الحافلات القادمة إلى',
+    },
     offline: 'غير متصلة',
 
     landingSubtitle: 'منصة تتبع حافلات جامعة الشارقة',
@@ -164,6 +169,11 @@ const I18N = {
     driverLogin: 'Driver Login',
     trackBuses: 'Track Buses',
     noBuses: 'No buses currently arriving at this station',
+        kiosk: {
+      idleTitle: 'University Bus Tracking', idleSubtitle: 'Internal Transport Service — University of Sharjah',
+      tapPrompt: 'Tap the screen to check your bus arrival', chooseDest: 'Where do you want to go?', chooseDestSub: 'Select a building or college',
+      backToDest: 'Back to destinations', arrivingTo: 'Buses arriving to',
+    },
     offline: 'Offline',
 
     landingSubtitle: 'University of Sharjah Live Bus Tracking Platform',
