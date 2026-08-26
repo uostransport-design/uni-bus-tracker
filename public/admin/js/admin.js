@@ -116,6 +116,7 @@ function vehicleFormHtml(v = {}) {
     <div><label>${a.formSeats}</label><input name="seats" type="number" value="${v.seats || 40}" /></div>
     <div><label>${a.formPhoto}</label><input name="photo_url" value="${v.photo_url || ''}" /></div>
     <div><label>${a.formRoute}</label><select name="route_id"><option value="">${t().admin.common.none}</option>${routeOptions}</select></div>
+        <div><label>لون الحافلة على الخريطة</label><input name="color" type="color" value="${v.color || '#2eb386'}" /></div>
     <div><label>${a.formDriver}</label><select name="driver_id"><option value="">${t().admin.common.none}</option>${driverOptions}</select></div>
     ${v.id ? `<div><label>${a.formStatus}</label><select name="vehicle_status">
         <option value="active" ${v.vehicle_status === 'active' ? 'selected' : ''}>${a.statusActive}</option>
