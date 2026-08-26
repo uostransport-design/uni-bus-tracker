@@ -63,3 +63,18 @@ body { margin: 0; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background
 .bus-marker-label.out_of_service, .bus-marker-label.emergency { background: var(--red); }
 .bus-marker-label.at_station { background: #1d4ed8; }
 .station-marker { background: var(--gold); width: 12px; height: 12px; transform: rotate(45deg); border: 2px solid #1a1a1a; }
+/* ---------------- أيقونة الحافلة الجديدة (رسمة حافلة بلون المسار) ---------------- */
+.bus-marker-wrap { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.bus-icon-circle {
+  width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  border: 3px solid white; box-shadow: 0 0 6px rgba(0,0,0,.3); flex-shrink: 0;
+}
+.bus-delay-label {
+  margin-top: 3px; background: white; color: #9a5b12; font-size: 10.5px; font-weight: 800;
+  padding: 2px 8px; border-radius: 8px; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  border: 1px solid #fdedd3;
+}
+.bus-delay-label.emergency { color: #b91c1c; border-color: #fbdada; }
+
+/* ---------------- أيقونة المحطة (شكل دبوس موقف حافلة) ---------------- */
+.station-pin { filter: drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
