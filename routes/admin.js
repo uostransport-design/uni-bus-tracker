@@ -57,15 +57,15 @@ router.get('/vehicles', (req, res) => {
 });
 
 router.post('/vehicles', canManage, (req, res) => {
-  const { name, plate_number, bus_type, seats, photo_url, route_id, driver_id, device_key } = req.body;
+  const { name, plate_number, bus_type, seats, photo_url, route_id, driver_id, device_key, color } = req.body;
   if (!name || !device_key) return res.status(400).json({ error: 'اسم الحافلة ومفتاح الجهاز مطلوبان' });
   if (db.prepare('SELECT id FROM buses WHERE device_key=?').get(device_key)) {
     return res.status(409).json({ error: 'مفتاح الجهاز مستخدم بالفعل' });
   }
   const info = db.prepare(
-    `INSERT INTO buses (name, plate_number, bus_type, seats, photo_url, route_id, driver_id, device_key)
-     VALUES (?,?,?,?,?,?,?,?)`
-  ).run(name, plate_number || null, bus_type || 'standard', seats || 40, photo_url || null, route_id || null, driver_id || null, device_key);
+    `INSERT INTO buses (name, plate_number, bus_type, seats, photo_url, route_id, driver_id, device_key, color)
+     VALUES (?,?,?,?,?,?,?,?,?)`
+  ).run(name, plate_number || null, bus_type || 'standard', seats || 40, photo_url || null, route_id || null, driver_id || null, device_key, color || '#2eb386');
   logAction(req.user, 'create', 'bus', info.lastInsertRowid, { name });
   res.json({ id: info.lastInsertRowid });
 });
@@ -84,13 +84,12 @@ router.post('/vehicles', canManage, (req, res) => {
   res.json({ id: info.lastInsertRowid });
 });
 
-router.put('/vehicles/:id/status', canManage, (req, res) => {
-  const { status } = req.body;
-  const valid = ['in_service', 'out_of_service', 'emergency'];
-  if (!valid.includes(status)) return res.status(400).json({ error: 'حالة غير صالحة' });
-  const override = status === 'in_service' ? 0 : 1;
-  db.prepare('UPDATE buses SET status=?, status_override=? WHERE id=?').run(status, override, req.params.id);
-  logAction(req.user, 'status_change', 'bus', req.params.id, { status });
+router.put('/vehicles/:id', canManage, (req, res) => {
+  const { name, plate_number, bus_type, seats, photo_url, route_id, driver_id, vehicle_status, color } = req.body;
+  db.prepare(
+    `UPDATE buses SET name=?, plate_number=?, bus_type=?, seats=?, photo_url=?, route_id=?, driver_id=?, vehicle_status=?, color=? WHERE id=?`
+  ).run(name, plate_number || null, bus_type || 'standard', seats || 40, photo_url || null, route_id || null, driver_id || null, vehicle_status || 'active', color || '#2eb386', req.params.id);
+  logAction(req.user, 'update', 'bus', req.params.id, req.body);
   res.json({ ok: true });
 });
 
