@@ -1,1 +1,48 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>وين تبي توصل؟ — حافلات جامعة الشارقة</title>
+<link rel="stylesheet" href="css/kiosk.css" />
+</head>
+<body>
+  <div class="screen">
 
+    <!-- الحالة الافتراضية -->
+    <div id="idle-view">
+      <div class="logo-big"><img src="/assets/logo-icon-only-512.png" alt="UOS" /></div>
+      <h1 data-i18n="kiosk.idleTitle">تتبع حافلات الجامعة</h1>
+      <p data-i18n="kiosk.idleSubtitle">خدمة النقل الداخلي — جامعة الشارقة</p>
+      <div class="tap-prompt" id="tap-prompt">
+        <div class="tap-circle">👆</div>
+        <span data-i18n="kiosk.tapPrompt">المس الشاشة لمعرفة موعد حافلتك</span>
+      </div>
+      <button class="lang-btn-kiosk" id="lang-toggle">EN</button>
+    </div>
+
+    <!-- اختيار الوجهة -->
+    <div id="destinations-view">
+      <div class="kiosk-header">
+        <div><div class="title" data-i18n="kiosk.chooseDest">وين تبي توصل؟</div><div class="subtitle" data-i18n="kiosk.chooseDestSub">اختر المبنى أو الكلية</div></div>
+        <button class="close-btn" id="close-btn">✕</button>
+      </div>
+      <div class="dest-grid" id="dest-grid"></div>
+    </div>
+
+    <!-- نتيجة الوجهة -->
+    <div id="arrivals-view">
+      <div class="arrivals-header">
+        <button class="back-btn" id="back-btn">→ <span data-i18n="kiosk.backToDest">رجوع لاختيار وجهة ثانية</span></button>
+        <div class="dest-title" data-i18n="kiosk.arrivingTo">الحافلات القادمة إلى</div>
+        <h2 id="arrivals-dest-name">—</h2>
+      </div>
+      <div class="arrivals-list" id="arrivals-list"></div>
+    </div>
+
+  </div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/kiosk.js"></script>
+</body>
+</html>
