@@ -62,7 +62,7 @@ document.querySelectorAll('.nav-item').forEach((btn) => {
 function loadTab(tab) {
   ({ overview: loadOverview, vehicles: loadVehicles, stations: loadStations, routes: loadRoutes,
      drivers: loadDrivers, alerts: loadAlerts, announcements: loadAnnouncements, incidents: loadIncidents,
-     reports: loadReports, users: loadUsers, audit: loadAudit }[tab] || (() => {}))();
+     reports: loadReports, users: loadUsers, audit: loadAudit, buildings: loadBuildings }[tab] || (() => {}))();
 }
 window.closeForm = (name) => document.getElementById('form-' + name).classList.add('hidden');
 
@@ -451,4 +451,54 @@ async function loadReports() {
 }
 
 /* ---------------- التشغيل الأولي ---------------- */
+/* ---------------- المباني (الكليات) ---------------- */
+let buildingsCache = [];
+async function loadBuildings() {
+  const buildings = await api('/buildings');
+  buildingsCache = buildings;
+  const el = document.getElementById('table-buildings');
+  if (!buildings.length) { el.innerHTML = '<div class="empty">لا توجد مباني مضافة بعد</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>الأيقونة</th><th>الاسم عربي</th><th>الاسم إنجليزي</th><th>خط العرض</th><th>خط الطول</th><th></th></tr></thead><tbody>
+    ${buildings.map((b) => `<tr>
+      <td style="font-size:20px">${b.icon || '🏛️'}</td><td>${b.name_ar}</td><td>${b.name_en}</td><td>${b.lat}</td><td>${b.lng}</td>
+      <td>${canEdit ? `<button class="btn-ghost" onclick="editBuilding(${b.id})">تعديل</button><button class="btn-danger" onclick="deleteBuilding(${b.id})">حذف</button>` : ''}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function buildingFormHtml(b = {}) {
+  const icons = ['🏛️', '🏗️', '🩺', '📚', '🏠', '🏟️', '🍽️', '🅿️', '🚪', '🕌'];
+  return `<form id="building-form"><div class="form-grid">
+    <div><label>الاسم بالعربية</label><input name="name_ar" value="${b.name_ar || ''}" required /></div>
+    <div><label>الاسم بالإنجليزية</label><input name="name_en" value="${b.name_en || ''}" required /></div>
+    <div><label>خط العرض (Latitude)</label><input name="lat" type="number" step="0.000001" value="${b.lat || ''}" required /></div>
+    <div><label>خط الطول (Longitude)</label><input name="lng" type="number" step="0.000001" value="${b.lng || ''}" required /></div>
+    <div><label>الأيقونة</label><select name="icon">${icons.map((ic) => `<option value="${ic}" ${b.icon === ic ? 'selected' : ''}>${ic}</option>`).join('')}</select></div>
+    <div><label>اللون</label><input name="color" type="color" value="${b.color || '#2eb386'}" /></div>
+  </div><div class="form-actions"><button type="submit">${b.id ? 'حفظ التعديلات' : 'إضافة المبنى'}</button><button type="button" onclick="closeForm('building')">إلغاء</button></div></form>`;
+}
+
+document.getElementById('btn-add-building').addEventListener('click', () => {
+  const panel = document.getElementById('form-building');
+  panel.innerHTML = buildingFormHtml();
+  panel.classList.remove('hidden');
+  panel.querySelector('form').addEventListener('submit', (e) => submitBuilding(e));
+});
+window.editBuilding = (id) => {
+  const b = buildingsCache.find((x) => x.id === id);
+  if (!b) return;
+  const panel = document.getElementById('form-building');
+  panel.innerHTML = buildingFormHtml(b);
+  panel.classList.remove('hidden');
+  panel.querySelector('form').addEventListener('submit', (e) => submitBuilding(e, id));
+};
+async function submitBuilding(e, id) {
+  e.preventDefault();
+  const body = Object.fromEntries(new FormData(e.target).entries());
+  try {
+    if (id) await api('/buildings/' + id, { method: 'PUT', body: JSON.stringify(body) });
+    else await api('/buildings', { method: 'POST', body: JSON.stringify(body) });
+    closeForm('building'); loadBuildings();
+  } catch (err) { alert(err.message); }
+}
+window.deleteBuilding = async (id) => { if (!confirm('حذف هذا المبنى؟')) return; await api('/buildings/' + id, { method: 'DELETE' }); loadBuildings(); };
 loadOverview();
