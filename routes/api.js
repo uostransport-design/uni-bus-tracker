@@ -172,5 +172,74 @@ router.get('/buildings/:id/arrivals', (req, res) => {
 
   res.json({ station: nearest, distanceMeters: Math.round(nearestDist), buses: enriched });
 });
+// نقطة انطلاق ثابتة (محطة الشاشة نفسها) + وجهة (مبنى) — يرجع الحافلات على المسارات الصحيحة بينهم
+router.get('/stations/:originStationId/to-building/:destId/arrivals', (req, res) => {
+  const originStation = db.prepare('SELECT * FROM stations WHERE id=?').get(req.params.originStationId);
+  const dest = db.prepare('SELECT * FROM buildings WHERE id=?').get(req.params.destId);
+  if (!originStation || !dest) return res.status(404).json({ error: 'بيانات غير صالحة' });
 
+  const stations = db.prepare('SELECT * FROM stations').all();
+  let destStation = null, destDist = Infinity;
+  stations.forEach((s) => {
+    const d = haversineMeters(dest.lat, dest.lng, s.lat, s.lng);
+    if (d < destDist) { destDist = d; destStation = s; }
+  });
+
+  const validRoutes = db.prepare(`
+    SELECT r.* FROM routes r
+    WHERE EXISTS (SELECT 1 FROM route_stations rs WHERE rs.route_id=r.id AND rs.station_id=?)
+      AND EXISTS (SELECT 1 FROM route_stations rs2 WHERE rs2.route_id=r.id AND rs2.station_id=?)
+  `).all(originStation.id, destStation.id);
+
+  if (!validRoutes.length) {
+    return res.json({ originStation, destStation, distanceMeters: Math.round(destDist), buses: [], noRouteFound: true });
+  }
+
+  const routeIds = validRoutes.map((r) => r.id);
+  const placeholders = routeIds.map(() => '?').join(',');
+  const candidateBuses = db.prepare(
+    `SELECT * FROM buses WHERE route_id IN (${placeholders}) AND current_lat IS NOT NULL AND current_lng IS NOT NULL`
+  ).all(...routeIds);
+
+  const enriched = candidateBuses.map((b) => {
+    const route = validRoutes.find((r) => r.id === b.route_id);
+    const routeGeometry = route && route.geometry ? JSON.parse(route.geometry) : null;
+    const { device_key, ...safe } = b;
+
+    let _etaSeconds = null;
+    if (b.next_station_id) {
+      const seq = db.prepare(`
+        SELECT s.id as station_id, s.lat, s.lng, rs.sequence
+        FROM route_stations rs JOIN stations s ON s.id = rs.station_id
+        WHERE rs.route_id = ? ORDER BY rs.sequence ASC
+      `).all(b.route_id);
+      const n = seq.length;
+      const nextIdx = seq.findIndex((s) => s.station_id === b.next_station_id);
+      if (nextIdx !== -1 && n > 0) {
+        let targetIdx = -1, minSteps = Infinity;
+        seq.forEach((s, i) => {
+          if (s.station_id === destStation.id) {
+            const steps = (i - nextIdx + n) % n;
+            if (steps < minSteps) { minSteps = steps; targetIdx = i; }
+          }
+        });
+        if (targetIdx !== -1) {
+          let totalMeters = haversineMeters(b.current_lat, b.current_lng, seq[nextIdx].lat, seq[nextIdx].lng);
+          let idx = nextIdx;
+          while (idx !== targetIdx) {
+            const nextI = (idx + 1) % n;
+            totalMeters += haversineMeters(seq[idx].lat, seq[idx].lng, seq[nextI].lat, seq[nextI].lng);
+            idx = nextI;
+          }
+          _etaSeconds = estimateEtaSeconds(totalMeters, b.current_speed);
+        }
+      }
+    }
+    return { ...safe, route: route ? { ...route, geometry: routeGeometry } : null, _etaSeconds };
+  });
+
+  enriched.sort((a, b) => (a._etaSeconds ?? 1e9) - (b._etaSeconds ?? 1e9));
+
+  res.json({ originStation, destStation, distanceMeters: Math.round(destDist), buses: enriched });
+});
 module.exports = router;
