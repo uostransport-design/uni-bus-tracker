@@ -17,6 +17,8 @@ const HOME_STATION_NAME_KEY = 'kiosk_home_station_name';
 
 let buildingsCache = [];
 let stationsCache = [];
+let allRoutesCache = [];
+let allBusesCache = [];
 let currentDestId = null;
 let currentDestName = '';
 let miniMap = null;
@@ -121,43 +123,52 @@ function ensureMiniMap() {
   return miniMap;
 }
 
-function updateMiniMap(originStation, destStation, nearestBus) {
+function updateMiniMap(originStation, destStation, relevantRoute) {
   try {
     const map = ensureMiniMap();
     miniMapMarkers.forEach((m) => map.removeLayer(m));
     miniMapMarkers = [];
-    const bounds = [];
+
+    // مناطق التكبير: بس نقطة الانطلاق والوجهة ومسار الرحلة (مو كل الحافلات، حتى ما يتوسّع الزوم بلا داعي)
+    const focusBounds = [];
+
+    // كل المسارات (نفس شكل الصفحة الرئيسية بالكامل)
+    allRoutesCache.forEach((route) => {
+      if (Array.isArray(route.geometry) && route.geometry.length > 1) {
+        const validPoints = route.geometry.filter((p) =>
+          Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number' && !isNaN(p[0]) && !isNaN(p[1])
+        );
+        if (validPoints.length > 1) {
+          const isRelevant = relevantRoute && route.id === relevantRoute.id;
+          const line = L.polyline(validPoints, { color: route.color || '#2563eb', weight: isRelevant ? 5 : 3, opacity: isRelevant ? 0.85 : 0.35 }).addTo(map);
+          miniMapMarkers.push(line);
+          if (isRelevant) validPoints.forEach((p) => focusBounds.push(p));
+        }
+      }
+    });
+
+    // كل الحافلات (نفس الصفحة الرئيسية)
+    allBusesCache.forEach((b) => {
+      if (b.current_lat == null || b.current_lng == null) return;
+      const color = (b.route && b.route.color) || '#2eb386';
+      const busIcon = L.divIcon({ className: '', html: `<div style="background:${color};width:24px;height:24px;border-radius:50%;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:800">🚌</div>`, iconSize: [24, 24] });
+      miniMapMarkers.push(L.marker([b.current_lat, b.current_lng], { icon: busIcon }).addTo(map));
+    });
 
     if (originStation) {
-      const originIcon = L.divIcon({ className: '', html: `<div style="background:#145c46;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`, iconSize: [16, 16] });
+      const originIcon = L.divIcon({ className: '', html: `<div style="background:#145c46;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>`, iconSize: [18, 18] });
       miniMapMarkers.push(L.marker([originStation.lat, originStation.lng], { icon: originIcon }).addTo(map));
-      bounds.push([originStation.lat, originStation.lng]);
+      focusBounds.push([originStation.lat, originStation.lng]);
     }
 
     if (destStation) {
-      const destIcon = L.divIcon({ className: '', html: `<div style="background:#c9a668;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`, iconSize: [16, 16] });
+      const destIcon = L.divIcon({ className: '', html: `<div style="background:#c9a668;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>`, iconSize: [18, 18] });
       miniMapMarkers.push(L.marker([destStation.lat, destStation.lng], { icon: destIcon }).addTo(map));
-      bounds.push([destStation.lat, destStation.lng]);
+      focusBounds.push([destStation.lat, destStation.lng]);
     }
 
-    if (nearestBus && nearestBus.route && Array.isArray(nearestBus.route.geometry)) {
-      const validPoints = nearestBus.route.geometry.filter((p) =>
-        Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number' && !isNaN(p[0]) && !isNaN(p[1])
-      );
-      if (validPoints.length > 1) {
-        miniMapMarkers.push(L.polyline(validPoints, { color: nearestBus.route.color || '#2563eb', weight: 4, opacity: .6 }).addTo(map));
-      }
-    }
-
-    if (nearestBus && nearestBus.current_lat && nearestBus.current_lng) {
-      const busColor = (nearestBus.route && nearestBus.route.color) || '#2eb386';
-      const busIcon = L.divIcon({ className: '', html: `<div style="background:${busColor};width:22px;height:22px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px">🚌</div>`, iconSize: [22, 22] });
-      miniMapMarkers.push(L.marker([nearestBus.current_lat, nearestBus.current_lng], { icon: busIcon }).addTo(map));
-      bounds.push([nearestBus.current_lat, nearestBus.current_lng]);
-    }
-
-    if (bounds.length > 1) map.fitBounds(L.latLngBounds(bounds), { padding: [60, 60], maxZoom: 15 });
-    else if (bounds.length === 1) map.setView(bounds[0], 15);
+    if (focusBounds.length > 1) map.fitBounds(L.latLngBounds(focusBounds), { padding: [40, 40], maxZoom: 17 });
+    else if (focusBounds.length === 1) map.setView(focusBounds[0], 17);
 
     setTimeout(() => map.invalidateSize(), 100);
   } catch (e) {
@@ -179,7 +190,13 @@ async function loadArrivals(destId, destName) {
   const el = document.getElementById('arrivals-list');
   const noteEl = document.getElementById('nearest-station-note');
 
-  updateMiniMap(data.originStation, data.destStation, data.buses && data.buses[0]);
+  [allRoutesCache, allBusesCache] = await Promise.all([
+    fetch('/api/routes').then((r) => r.json()),
+    fetch('/api/buses').then((r) => r.json()),
+  ]);
+
+  const relevantRoute = data.buses && data.buses[0] ? data.buses[0].route : null;
+  updateMiniMap(data.originStation, data.destStation, relevantRoute);
 
   if (!data.destStation) {
     noteEl.textContent = '';
