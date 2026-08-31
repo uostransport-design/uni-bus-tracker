@@ -1,4 +1,4 @@
-// routes/api.js — واجهات القراءة العامة (بدون تسجيل دخول) لشاشات العرض وصفحات المحطات
+// routes/api.js — واجهات القراءة العامة (بدون تسجيل دخول) لشاشات العرض وصفحات المحطات والمباني
 const express = require('express');
 const db = require('../db');
 const { haversineMeters, estimateEtaSeconds } = require('../utils');
@@ -14,6 +14,7 @@ const STATUS_LABELS = {
   emergency: { ar: 'حالة طارئة', en: 'Emergency' },
 };
 
+/* ---------------- المسارات ---------------- */
 router.get('/routes', (req, res) => {
   const routes = db.prepare('SELECT * FROM routes').all();
   const withStations = routes.map((r) => ({
@@ -28,17 +29,36 @@ router.get('/routes', (req, res) => {
   res.json(withStations);
 });
 
+/* ---------------- المحطات ---------------- */
 router.get('/stations', (req, res) => {
   res.json(db.prepare('SELECT * FROM stations ORDER BY name_en ASC').all());
 });
 
+/* ---------------- كل الحافلات (للخريطة الرئيسية) ---------------- */
+router.get('/buses', (req, res) => {
+  const buses = db.prepare('SELECT * FROM buses').all();
+  const enriched = buses.map((b) => {
+    const nextStation = b.next_station_id ? db.prepare('SELECT * FROM stations WHERE id=?').get(b.next_station_id) : null;
+    const currentStation = b.current_station_id ? db.prepare('SELECT * FROM stations WHERE id=?').get(b.current_station_id) : null;
+    const route = b.route_id ? db.prepare('SELECT * FROM routes WHERE id=?').get(b.route_id) : null;
+    const { device_key, ...safe } = b;
+    let _etaSeconds = null;
+    if (nextStation && b.current_lat != null && b.current_lng != null) {
+      const dist = haversineMeters(b.current_lat, b.current_lng, nextStation.lat, nextStation.lng);
+      _etaSeconds = estimateEtaSeconds(dist, b.current_speed);
+    }
+    return { ...safe, nextStation, currentStation, route, _etaSeconds, statusLabel: STATUS_LABELS[b.status] || { ar: b.status, en: b.status } };
+  });
+  res.json(enriched);
+});
+
+/* ---------------- الحافلات القادمة إلى محطة معيّنة (تُستخدم بصفحات /station/:id) ---------------- */
 router.get('/stations/:id/buses', (req, res) => {
   const stationId = Number(req.params.id);
   const station = db.prepare('SELECT * FROM stations WHERE id=?').get(stationId);
-  const buses = db.prepare('SELECT * FROM buses WHERE next_station_id = ?').all(nearest.id);
+  const buses = db.prepare('SELECT * FROM buses WHERE next_station_id = ?').all(stationId);
   const enriched = buses.map((b) => {
-    let route = b.route_id ? db.prepare('SELECT * FROM routes WHERE id=?').get(b.route_id) : null;
-    if (route) route = { ...route, geometry: route.geometry ? JSON.parse(route.geometry) : null };
+    const route = b.route_id ? db.prepare('SELECT * FROM routes WHERE id=?').get(b.route_id) : null;
     const { device_key, ...safe } = b;
     let _etaSeconds = null;
     if (station && b.current_lat != null && b.current_lng != null) {
@@ -51,18 +71,7 @@ router.get('/stations/:id/buses', (req, res) => {
   res.json(enriched);
 });
 
-// الحافلات القادمة إلى محطة معيّنة فقط (تستخدمها صفحة /station/:id)
-router.get('/stations/:id/buses', (req, res) => {
-  const stationId = Number(req.params.id);
-  const buses = db.prepare('SELECT * FROM buses WHERE next_station_id = ?').all(stationId);
-  const enriched = buses.map((b) => {
-    const route = b.route_id ? db.prepare('SELECT * FROM routes WHERE id=?').get(b.route_id) : null;
-    const { device_key, ...safe } = b;
-    return { ...safe, route, statusLabel: STATUS_LABELS[b.status] || { ar: b.status, en: b.status } };
-  });
-  res.json(enriched);
-});
-
+/* ---------------- سجل حركة حافلة معيّنة ---------------- */
 router.get('/buses/:id/history', (req, res) => {
   const points = db
     .prepare('SELECT lat, lng, speed, recorded_at FROM gps_history WHERE bus_id=? ORDER BY id DESC LIMIT 50')
@@ -70,6 +79,7 @@ router.get('/buses/:id/history', (req, res) => {
   res.json(points.reverse());
 });
 
+/* ---------------- سجل الوصول العام ---------------- */
 router.get('/arrivals', (req, res) => {
   const rows = db
     .prepare(
@@ -80,7 +90,7 @@ router.get('/arrivals', (req, res) => {
   res.json(rows);
 });
 
-// إعلانات نشطة (لشريط التنبيهات المتحرك)، اختياريًا مفلترة حسب محطة
+/* ---------------- الإعلانات ---------------- */
 router.get('/announcements', (req, res) => {
   const stationId = req.query.station_id;
   const rows = db
@@ -91,10 +101,13 @@ router.get('/announcements', (req, res) => {
     : rows;
   res.json(filtered);
 });
+
+/* ---------------- المباني (الكليات) ---------------- */
 router.get('/buildings', (req, res) => {
   res.json(db.prepare('SELECT * FROM buildings ORDER BY name_ar ASC').all());
 });
 
+// إيجاد أقرب محطة فعلية لمبنى معيّن + كل الحافلات القادمة إليها (حتى لو لسا بعيدة عنها بمحطات)
 router.get('/buildings/:id/arrivals', (req, res) => {
   const building = db.prepare('SELECT * FROM buildings WHERE id=?').get(req.params.id);
   if (!building) return res.status(404).json({ error: 'المبنى غير موجود' });
@@ -159,4 +172,5 @@ router.get('/buildings/:id/arrivals', (req, res) => {
 
   res.json({ station: nearest, distanceMeters: Math.round(nearestDist), buses: enriched });
 });
+
 module.exports = router;
