@@ -4,7 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>وين تبي توصل؟ — حافلات جامعة الشارقة</title>
-<link rel="stylesheet" href="css/kiosk.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/kiosk.css" />
 </head>
 <body>
   <div class="screen">
@@ -36,13 +37,14 @@
         <button class="back-btn" id="back-btn">→ <span data-i18n="kiosk.backToDest">رجوع لاختيار وجهة ثانية</span></button>
         <div class="dest-title" data-i18n="kiosk.arrivingTo">الحافلات القادمة إلى</div>
         <div class="nearest-note" id="nearest-station-note"></div>
+        <div id="mini-map"></div>
         <h2 id="arrivals-dest-name">—</h2>
       </div>
       <div class="arrivals-list" id="arrivals-list"></div>
     </div>
 
   </div>
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/kiosk.js"></script>
 </body>
