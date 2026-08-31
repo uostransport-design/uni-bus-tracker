@@ -1,12 +1,12 @@
-// demo_fleet.js — 5 حافلات تجريبية لكل مسار، بتوقيت وصول منتظم ودقيق لكل محطة
-// المسار الأول: حافلة كل 5 دقائق — المسار الثاني: كل 10 دقائق — المسار الثالث: كل 15 دقيقة... وهكذا
+// demo_fleet.js — 5 حافلات تجريبية لكل مسار، تتحرك على المسار الفعلي المرسوم (OSRM أو رسم يدوي)
+// بتوقيت وصول منتظم ودقيق لكل محطة (المسار 1: كل 5 دقائق، المسار 2: كل 10 دقائق...)
 // الاستخدام: node demo_fleet.js
 const db = require('./db');
 
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000/api/gps';
 const TICK_MS = 3000;
 const BUSES_PER_ROUTE = 5;
-const HEADWAY_STEP_MINUTES = 5; // المسار 1: 5 دقائق، المسار 2: 10 دقائق، المسار 3: 15 دقيقة...
+const HEADWAY_STEP_MINUTES = 5;
 const DEMO_COLORS = ['#2563eb', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0891b2', '#be185d', '#0d9488', '#65a30d', '#7c3aed'];
 
 function haversineKm(lat1, lng1, lat2, lng2) {
@@ -23,9 +23,21 @@ function getRouteStations(routeId) {
   ).all(routeId);
 }
 
-// يبني حلقة مغلقة (يضيف أول محطة بنهاية القائمة) ويحسب المسافة التراكمية لكل نقطة
-function buildLoopPath(stations) {
-  const loop = [...stations, stations[0]];
+// يرجع نقاط المسار الفعلي المرسوم (geometry) إن وُجد، وإلا يرجع لخط مستقيم بين المحطات كحل بديل
+function getRoutePathPoints(route, stations) {
+  if (route.geometry) {
+    try {
+      const geo = JSON.parse(route.geometry);
+      if (Array.isArray(geo) && geo.length > 1) {
+        return geo.map((p) => ({ lat: p[0], lng: p[1] }));
+      }
+    } catch (e) { /* تجاهل وارجع للمحطات */ }
+  }
+  return stations.map((s) => ({ lat: s.lat, lng: s.lng }));
+}
+
+function buildLoopPath(points) {
+  const loop = [...points, points[0]]; // إغلاق الحلقة بالرجوع لنقطة البداية
   const cumulative = [0];
   for (let i = 1; i < loop.length; i++) {
     cumulative.push(cumulative[i - 1] + haversineKm(loop[i - 1].lat, loop[i - 1].lng, loop[i].lat, loop[i].lng));
@@ -33,7 +45,6 @@ function buildLoopPath(stations) {
   return { loop, cumulative, totalKm: cumulative[cumulative.length - 1] };
 }
 
-// يحوّل مسافة مقطوعة (كم) داخل الحلقة إلى إحداثيات lat/lng بالاستيفاء الخطي
 function positionAtDistance(path, distanceKm) {
   const d = ((distanceKm % path.totalKm) + path.totalKm) % path.totalKm;
   for (let i = 1; i < path.cumulative.length; i++) {
@@ -83,12 +94,14 @@ routes.forEach((route, routeIndex) => {
     return;
   }
 
-  const path = buildLoopPath(stations);
+  const pathPoints = getRoutePathPoints(route, stations);
+  const usingGeometry = !!route.geometry;
+  const path = buildLoopPath(pathPoints);
   const headwayMinutes = (routeIndex + 1) * HEADWAY_STEP_MINUTES;
   const fullLoopMinutes = headwayMinutes * BUSES_PER_ROUTE;
   const speedKmh = path.totalKm / (fullLoopMinutes / 60);
 
-  console.log(`\n🛣️ ${route.name_ar}: طول الحلقة ${path.totalKm.toFixed(2)} كم — توصل حافلة كل ${headwayMinutes} دقائق — سرعة الحافلات ${speedKmh.toFixed(1)} كم/س`);
+  console.log(`\n🛣️ ${route.name_ar}: ${usingGeometry ? 'يتبع المسار المرسوم على الطرق ✅' : 'تحذير: لا يوجد مسار مرسوم، يستخدم خط مستقيم ⚠️'} — طول الحلقة ${path.totalKm.toFixed(2)} كم — حافلة كل ${headwayMinutes} دقائق — سرعة ${speedKmh.toFixed(1)} كم/س`);
 
   const buses = ensureDemoBuses(route, BUSES_PER_ROUTE);
   buses.forEach((bus, i) => {
@@ -97,7 +110,7 @@ routes.forEach((route, routeIndex) => {
       deviceKey: bus.device_key,
       path,
       speedKmh,
-      distanceKm: (i / BUSES_PER_ROUTE) * path.totalKm, // توزيع متساوٍ حول الحلقة لضمان التوقيت المنتظم
+      distanceKm: (i / BUSES_PER_ROUTE) * path.totalKm,
     });
   });
 });
