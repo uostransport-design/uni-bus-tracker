@@ -40,16 +40,23 @@
       <div class="dest-grid" id="dest-grid"></div>
     </div>
 
-    <!-- النتيجة: الحافلات القادمة -->
+    <!-- النتيجة: خريطة يسار + حافلات يمين -->
     <div id="arrivals-view">
       <div class="arrivals-header">
         <button class="back-btn" id="back-btn">→ <span data-i18n="kiosk.backToDest">رجوع لاختيار وجهة ثانية</span></button>
         <div class="dest-title" data-i18n="kiosk.arrivingTo">الحافلات القادمة إلى</div>
         <h2 id="arrivals-dest-name">—</h2>
       </div>
-      <div id="mini-map"></div>
-      <div class="nearest-note" id="nearest-station-note"></div>
-      <div class="arrivals-list" id="arrivals-list"></div>
+
+      <div class="arrivals-body">
+        <div class="map-panel">
+          <div id="mini-map"></div>
+          <div class="nearest-note" id="nearest-station-note"></div>
+        </div>
+        <div class="list-panel">
+          <div class="arrivals-list" id="arrivals-list"></div>
+        </div>
+      </div>
     </div>
 
   </div>
