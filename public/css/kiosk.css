@@ -61,4 +61,4 @@ body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: #0f2e24; 
 .arrival-eta .unit { font-size: 13px; color: #5a8a76; font-weight: 700; margin-top: 2px; }
 .no-buses { text-align: center; color: #5a8a76; font-size: 16px; margin-top: 60px; }
 .nearest-note { margin-top: 10px; font-size: 14px; color: #d7f0e5; font-weight: 600; }
-#mini-map { height: 180px; margin: 16px 0; border-radius: 14px; overflow: hidden; border: 2px solid rgba(255,255,255,.2); }
+#mini-map { height: 320px; margin: 20px 0; border-radius: 16px; overflow: hidden; border: 3px solid rgba(255,255,255,.25); }
