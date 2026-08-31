@@ -1,4 +1,4 @@
-// kiosk.js — شاشة اللمس التفاعلية: اختيار المبنى/الكلية، والنظام يجد أقرب محطة ويعرض الحافلات القادمة
+// kiosk.js — شاشة اللمس التفاعلية: اختيار المبنى/الكلية، والنظام يجد أقرب محطة ويعرض الحافلات القادمة + خط السير
 
 applyLang();
 document.getElementById('lang-toggle').addEventListener('click', (e) => {
@@ -17,6 +17,8 @@ let currentBuildingId = null;
 let currentBuildingName = '';
 let miniMap = null;
 let miniMapMarkers = [];
+
+function busNumber(name) { const m = (name || '').match(/(\d+)/); return m ? m[1] : '•'; }
 
 function ensureMiniMap() {
   if (miniMap) return miniMap;
@@ -42,13 +44,11 @@ function updateMiniMap(building, station, nearestBus) {
     bounds.push([station.lat, station.lng]);
   }
 
-  // خط سير الحافلة الأقرب (إن وُجد مسار محسوب لها)
   if (nearestBus && nearestBus.route && nearestBus.route.geometry && nearestBus.route.geometry.length > 1) {
     const routeLine = L.polyline(nearestBus.route.geometry, { color: nearestBus.route.color || '#2563eb', weight: 4, opacity: .55 }).addTo(map);
     miniMapMarkers.push(routeLine);
   }
 
-  // موقع الحافلة الأقرب الحي
   if (nearestBus && nearestBus.current_lat && nearestBus.current_lng) {
     const busColor = nearestBus.color || '#2eb386';
     const busIcon = L.divIcon({ className: '', html: `<div style="background:${busColor};width:22px;height:22px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:800">🚌</div>`, iconSize: [22, 22] });
@@ -61,9 +61,6 @@ function updateMiniMap(building, station, nearestBus) {
 
   setTimeout(() => map.invalidateSize(), 100);
 }
-}
-
-function busNumber(name) { const m = (name || '').match(/(\d+)/); return m ? m[1] : '•'; }
 
 function showIdle() {
   document.getElementById('idle-view').style.display = 'flex';
@@ -107,12 +104,13 @@ async function loadArrivals(buildingId, buildingName) {
   document.getElementById('arrivals-view').classList.add('active');
   document.getElementById('arrivals-dest-name').textContent = buildingName;
 
-    const lang = getLang();
+  const lang = getLang();
   const building = buildingsCache.find((b) => b.id === buildingId);
   const data = await (await fetch(`/api/buildings/${buildingId}/arrivals`)).json();
   const el = document.getElementById('arrivals-list');
   const noteEl = document.getElementById('nearest-station-note');
-    if (building) updateMiniMap(building, data.station, data.buses && data.buses[0]);
+
+  if (building) updateMiniMap(building, data.station, data.buses && data.buses[0]);
 
   if (!data.station) {
     if (noteEl) noteEl.textContent = '';
