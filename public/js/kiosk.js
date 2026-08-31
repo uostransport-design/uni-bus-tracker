@@ -156,8 +156,8 @@ function updateMiniMap(originStation, destStation, nearestBus) {
       bounds.push([nearestBus.current_lat, nearestBus.current_lng]);
     }
 
-    if (bounds.length > 1) map.fitBounds(L.latLngBounds(bounds), { padding: [30, 30] });
-    else if (bounds.length === 1) map.setView(bounds[0], 16);
+    if (bounds.length > 1) map.fitBounds(L.latLngBounds(bounds), { padding: [60, 60], maxZoom: 15 });
+    else if (bounds.length === 1) map.setView(bounds[0], 15);
 
     setTimeout(() => map.invalidateSize(), 100);
   } catch (e) {
