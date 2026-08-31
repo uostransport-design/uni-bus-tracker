@@ -166,6 +166,19 @@ try {
 } catch (e) {
   // العمود موجود بالفعل — لا حاجة لفعل شيء
 }
+   try {
+     db.exec(`
+       CREATE TABLE IF NOT EXISTS buildings (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         name_ar TEXT NOT NULL,
+         name_en TEXT NOT NULL,
+         lat REAL NOT NULL,
+         lng REAL NOT NULL,
+         icon TEXT DEFAULT '🏛️',
+         color TEXT DEFAULT '#2eb386'
+       )
+     `);
+   } catch (e) {}
 module.exports = db;
 try {
   db.exec("ALTER TABLE routes ADD COLUMN geometry_source TEXT DEFAULT 'osrm'");
