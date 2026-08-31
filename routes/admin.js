@@ -355,5 +355,30 @@ router.get('/reports/summary', (req, res) => {
      GROUP BY b.id ORDER BY arrivals_count DESC`
   ).all());
 });
+router.get('/buildings', (req, res) => res.json(db.prepare('SELECT * FROM buildings ORDER BY id ASC').all()));
 
+router.post('/buildings', canManage, (req, res) => {
+  const { name_ar, name_en, lat, lng, icon, color } = req.body;
+  if (!name_ar || !name_en || lat === undefined || lng === undefined) {
+    return res.status(400).json({ error: 'الاسم بالعربية والإنجليزية والإحداثيات مطلوبة' });
+  }
+  const info = db.prepare('INSERT INTO buildings (name_ar, name_en, lat, lng, icon, color) VALUES (?,?,?,?,?,?)')
+    .run(name_ar, name_en, lat, lng, icon || '🏛️', color || '#2eb386');
+  logAction(req.user, 'create', 'building', info.lastInsertRowid, { name_en });
+  res.json({ id: info.lastInsertRowid });
+});
+
+router.put('/buildings/:id', canManage, (req, res) => {
+  const { name_ar, name_en, lat, lng, icon, color } = req.body;
+  db.prepare('UPDATE buildings SET name_ar=?, name_en=?, lat=?, lng=?, icon=?, color=? WHERE id=?')
+    .run(name_ar, name_en, lat, lng, icon || '🏛️', color || '#2eb386', req.params.id);
+  logAction(req.user, 'update', 'building', req.params.id);
+  res.json({ ok: true });
+});
+
+router.delete('/buildings/:id', canManage, (req, res) => {
+  db.prepare('DELETE FROM buildings WHERE id=?').run(req.params.id);
+  logAction(req.user, 'delete', 'building', req.params.id);
+  res.json({ ok: true });
+});
 module.exports = router;
