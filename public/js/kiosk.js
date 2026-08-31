@@ -28,6 +28,7 @@ function ensureMiniMap() {
 }
 
 function updateMiniMap(building, station, nearestBus) {
+  try {
   const map = ensureMiniMap();
   miniMapMarkers.forEach((m) => map.removeLayer(m));
   miniMapMarkers = [];
@@ -44,9 +45,14 @@ function updateMiniMap(building, station, nearestBus) {
     bounds.push([station.lat, station.lng]);
   }
 
-  if (nearestBus && nearestBus.route && nearestBus.route.geometry && nearestBus.route.geometry.length > 1) {
-    const routeLine = L.polyline(nearestBus.route.geometry, { color: nearestBus.route.color || '#2563eb', weight: 4, opacity: .55 }).addTo(map);
-    miniMapMarkers.push(routeLine);
+    if (nearestBus && nearestBus.route && Array.isArray(nearestBus.route.geometry)) {
+    const validPoints = nearestBus.route.geometry.filter((p) =>
+      Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number' && !isNaN(p[0]) && !isNaN(p[1])
+    );
+    if (validPoints.length > 1) {
+      const routeLine = L.polyline(validPoints, { color: nearestBus.route.color || '#2563eb', weight: 4, opacity: .55 }).addTo(map);
+      miniMapMarkers.push(routeLine);
+    }
   }
 
   if (nearestBus && nearestBus.current_lat && nearestBus.current_lng) {
@@ -59,7 +65,10 @@ function updateMiniMap(building, station, nearestBus) {
   if (bounds.length > 1) map.fitBounds(L.latLngBounds(bounds), { padding: [30, 30] });
   else map.setView([building.lat, building.lng], 17);
 
-  setTimeout(() => map.invalidateSize(), 100);
+    setTimeout(() => map.invalidateSize(), 100);
+  } catch (e) {
+    console.error('خطأ برسم الخريطة المصغّرة:', e.message);
+  }
 }
 
 function showIdle() {
