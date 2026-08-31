@@ -2,7 +2,7 @@
 body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: #0f2e24; overflow: hidden; height: 100vh; }
 .screen { position: relative; width: 100%; height: 100vh; overflow: hidden; }
 
-/* ---------- الحالة الافتراضية ---------- */
+/* ---------------- الحالة الافتراضية ---------------- */
 #idle-view {
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
   background: radial-gradient(circle at 30% 20%, #1f8a68, #0f2e24 65%); cursor: pointer;
@@ -11,6 +11,7 @@ body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: #0f2e24; 
 .logo-big img { width: 100%; height: 100%; object-fit: contain; }
 #idle-view h1 { color: white; font-size: 34px; font-weight: 800; margin-bottom: 10px; }
 #idle-view p { color: #a7f3d0; font-size: 16px; margin-bottom: 50px; }
+#idle-station-label { color: #a7f3d0; font-size: 14px; margin-top: -30px; margin-bottom: 30px; font-weight: 600; }
 .tap-prompt { display: flex; flex-direction: column; align-items: center; gap: 14px; animation: pulse 1.8s ease-in-out infinite; }
 .tap-circle { width: 110px; height: 110px; border-radius: 50%; background: rgba(255,255,255,.12); border: 2px solid #c9a668; display: flex; align-items: center; justify-content: center; font-size: 42px; }
 .tap-prompt span { color: #c9a668; font-size: 17px; font-weight: 700; }
@@ -18,7 +19,16 @@ body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: #0f2e24; 
 .lang-btn-kiosk { position: absolute; top: 24px; left: 24px; background: rgba(255,255,255,.12); color: #c9a668; border: 1px solid rgba(255,255,255,.3); border-radius: 10px; padding: 10px 18px; font-size: 14px; font-weight: 700; cursor: pointer; }
 [dir="rtl"] .lang-btn-kiosk { left: auto; right: 24px; }
 
-/* ---------- اختيار الوجهة ---------- */
+.settings-btn {
+  position: absolute; bottom: 20px; left: 20px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2);
+  border-radius: 50%; width: 44px; height: 44px; font-size: 18px; cursor: pointer; opacity: .4;
+}
+[dir="rtl"] .settings-btn { left: auto; right: 20px; }
+
+/* ---------------- إعداد الشاشة ---------------- */
+#setup-view { position: absolute; inset: 0; background: #f2fbf7; display: none; flex-direction: column; }
+
+/* ---------------- اختيار الوجهة ---------------- */
 #destinations-view { position: absolute; inset: 0; background: #f2fbf7; display: none; flex-direction: column; }
 #destinations-view.active { display: flex; }
 .kiosk-header { display: flex; align-items: center; justify-content: space-between; padding: 24px 40px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
@@ -36,251 +46,39 @@ body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: #0f2e24; 
 .dest-card h3 { font-size: 16.5px; font-weight: 700; color: #14352b; }
 .dest-empty { grid-column: 1/-1; text-align: center; color: #5a8a76; padding: 60px; font-size: 16px; }
 
-/* ---------- نتيجة الوجهة: الحافلات القادمة ---------- */
+/* ---------------- نتيجة الوجهة: تخطيط خريطة يسار + قائمة يمين ---------------- */
 #arrivals-view { position: absolute; inset: 0; display: none; flex-direction: column; background: #f2fbf7; }
 #arrivals-view.active { display: flex; }
-.arrivals-header { padding: 28px 40px; background: #145c46; color: white; }
-.arrivals-header .back-btn { background: rgba(255,255,255,.2); border: none; color: white; padding: 10px 20px; border-radius: 30px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 16px; }
+.arrivals-header { padding: 22px 40px; background: #145c46; color: white; flex-shrink: 0; }
+.arrivals-header .back-btn { background: rgba(255,255,255,.2); border: none; color: white; padding: 10px 20px; border-radius: 30px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 14px; }
 .arrivals-header .dest-title { font-size: 15px; opacity: .85; }
-.arrivals-header h2 { font-size: 28px; font-weight: 800; margin-top: 4px; }
+.arrivals-header h2 { font-size: 26px; font-weight: 800; margin-top: 4px; }
 
-.arrivals-list { flex: 1; padding: 30px 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+.arrivals-body { flex: 1; display: grid; grid-template-columns: 1.2fr 1fr; gap: 0; overflow: hidden; }
+[dir="rtl"] .arrivals-body { direction: rtl; }
+
+.map-panel { padding: 24px; display: flex; flex-direction: column; background: #eafaf4; }
+#mini-map { flex: 1; border-radius: 16px; overflow: hidden; border: 3px solid white; box-shadow: 0 4px 16px rgba(20,92,70,.12); min-height: 300px; }
+.nearest-note { margin-top: 14px; font-size: 15px; color: #145c46; font-weight: 700; text-align: center; }
+
+.list-panel { padding: 24px 30px; overflow-y: auto; background: #f2fbf7; }
+.arrivals-list { display: flex; flex-direction: column; gap: 16px; }
 .arrival-card {
-  background: white; border-radius: 18px; padding: 24px 28px; display: flex; align-items: center; gap: 22px;
+  background: white; border-radius: 18px; padding: 20px 24px; display: flex; align-items: center; gap: 18px;
   box-shadow: 0 6px 20px rgba(20,92,70,.08); border-inline-start: 8px solid #2eb386;
 }
 .arrival-bus-circle {
-  width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-  color: white; font-weight: 800; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  width: 54px; height: 54px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 800; font-size: 18px; box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }
 .arrival-info { flex: 1; }
-.arrival-info .route-name { font-size: 14px; color: #5a8a76; font-weight: 600; }
-.arrival-info .bus-name { font-size: 18px; font-weight: 800; color: #14352b; margin-top: 2px; }
-.arrival-eta { text-align: center; min-width: 70px; }
-.arrival-eta .num { font-size: 38px; font-weight: 900; color: #145c46; line-height: 1; }
-.arrival-eta .unit { font-size: 13px; color: #5a8a76; font-weight: 700; margin-top: 2px; }
+.arrival-info .route-name { font-size: 13px; color: #5a8a76; font-weight: 600; }
+.arrival-info .bus-name { font-size: 16.5px; font-weight: 800; color: #14352b; margin-top: 2px; }
+.arrival-eta { text-align: center; min-width: 60px; }
+.arrival-eta .num { font-size: 32px; font-weight: 900; color: #145c46; line-height: 1; }
+.arrival-eta .unit { font-size: 12px; color: #5a8a76; font-weight: 700; margin-top: 2px; }
 .no-buses { text-align: center; color: #5a8a76; font-size: 16px; margin-top: 60px; }
-.nearest-note { margin-top: 10px; font-size: 14px; color: #d7f0e5; font-weight: 600; }
-#mini-map { height: 640px; margin: 20px 0; border-radius: 16px; overflow: hidden; border: 3px solid rgba(255,255,255,.25); }
-/* ---------------- زر إعادة ضبط محطة الشاشة ---------------- */
-.settings-btn {
-  position: absolute; bottom: 20px; left: 20px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2);
-  border-radius: 50%; width: 44px; height: 44px; font-size: 18px; cursor: pointer; opacity: .4;
+
+@media (max-width: 900px) {
+  .arrivals-body { grid-template-columns: 1fr; grid-template-rows: 260px 1fr; }
 }
-[dir="rtl"] .settings-btn { left: auto; right: 20px; }
-#idle-station-label { color: #a7f3d0; font-size: 14px; margin-top: -30px; margin-bottom: 30px; font-weight: 600; }
-#setup-view { position: absolute; inset: 0; background: #f2fbf7; display: none; flex-direction: column; }
-// routes/api.js — واجهات القراءة العامة (بدون تسجيل دخول) لشاشات العرض وصفحات المحطات والمباني وشاشة اللمس
-const express = require('express');
-const db = require('../db');
-const { haversineMeters, estimateEtaSeconds } = require('../utils');
-
-const router = express.Router();
-
-const STATUS_LABELS = {
-  in_service: { ar: 'في الخدمة', en: 'In Service' },
-  approaching: { ar: 'تقترب', en: 'Approaching' },
-  at_station: { ar: 'عند المحطة', en: 'At Station' },
-  delayed: { ar: 'متأخرة', en: 'Delayed' },
-  out_of_service: { ar: 'خارج الخدمة', en: 'Out of Service' },
-  emergency: { ar: 'حالة طارئة', en: 'Emergency' },
-};
-
-/* ============================ المسارات ============================ */
-router.get('/routes', (req, res) => {
-  const routes = db.prepare('SELECT * FROM routes').all();
-  const withStations = routes.map((r) => ({
-    ...r,
-    geometry: r.geometry ? JSON.parse(r.geometry) : null,
-    stations: db.prepare(
-      `SELECT s.id, s.code, s.name_ar, s.name_en, s.lat, s.lng, rs.sequence
-       FROM route_stations rs JOIN stations s ON s.id = rs.station_id
-       WHERE rs.route_id=? ORDER BY rs.sequence ASC`
-    ).all(r.id),
-  }));
-  res.json(withStations);
-});
-
-/* ============================ المحطات ============================ */
-router.get('/stations', (req, res) => {
-  res.json(db.prepare('SELECT * FROM stations ORDER BY name_en ASC').all());
-});
-
-/* ============================ كل الحافلات (للخريطة الرئيسية) ============================ */
-router.get('/buses', (req, res) => {
-  const buses = db.prepare('SELECT * FROM buses').all();
-  const enriched = buses.map((b) => {
-    const nextStation = b.next_station_id ? db.prepare('SELECT * FROM stations WHERE id=?').get(b.next_station_id) : null;
-    const currentStation = b.current_station_id ? db.prepare('SELECT * FROM stations WHERE id=?').get(b.current_station_id) : null;
-    const route = b.route_id ? db.prepare('SELECT * FROM routes WHERE id=?').get(b.route_id) : null;
-    const { device_key, ...safe } = b;
-    let _etaSeconds = null;
-    if (nextStation && b.current_lat != null && b.current_lng != null) {
-      const dist = haversineMeters(b.current_lat, b.current_lng, nextStation.lat, nextStation.lng);
-      _etaSeconds = estimateEtaSeconds(dist, b.current_speed);
-    }
-    return { ...safe, nextStation, currentStation, route, _etaSeconds, statusLabel: STATUS_LABELS[b.status] || { ar: b.status, en: b.status } };
-  });
-  res.json(enriched);
-});
-
-/* ============================ الحافلات القادمة إلى محطة معيّنة (لصفحات /station/:id) ============================ */
-router.get('/stations/:id/buses', (req, res) => {
-  const stationId = Number(req.params.id);
-  const station = db.prepare('SELECT * FROM stations WHERE id=?').get(stationId);
-  const buses = db.prepare('SELECT * FROM buses WHERE next_station_id = ?').all(stationId);
-  const enriched = buses.map((b) => {
-    const route = b.route_id ? db.prepare('SELECT * FROM routes WHERE id=?').get(b.route_id) : null;
-    const { device_key, ...safe } = b;
-    let _etaSeconds = null;
-    if (station && b.current_lat != null && b.current_lng != null) {
-      const dist = haversineMeters(b.current_lat, b.current_lng, station.lat, station.lng);
-      _etaSeconds = estimateEtaSeconds(dist, b.current_speed);
-    }
-    return { ...safe, route, _etaSeconds, statusLabel: STATUS_LABELS[b.status] || { ar: b.status, en: b.status } };
-  });
-  enriched.sort((a, b) => (a._etaSeconds ?? 1e9) - (b._etaSeconds ?? 1e9));
-  res.json(enriched);
-});
-
-/* ============================ سجل حركة حافلة معيّنة ============================ */
-router.get('/buses/:id/history', (req, res) => {
-  const points = db
-    .prepare('SELECT lat, lng, speed, recorded_at FROM gps_history WHERE bus_id=? ORDER BY id DESC LIMIT 50')
-    .all(req.params.id);
-  res.json(points.reverse());
-});
-
-/* ============================ سجل الوصول العام ============================ */
-router.get('/arrivals', (req, res) => {
-  const rows = db
-    .prepare(
-      `SELECT a.id, a.arrived_at, b.name as bus_name, s.name_ar as station_ar, s.name_en as station_en
-       FROM arrivals a JOIN buses b ON b.id=a.bus_id JOIN stations s ON s.id=a.station_id
-       ORDER BY a.id DESC LIMIT 100`
-    ).all();
-  res.json(rows);
-});
-
-/* ============================ الإعلانات ============================ */
-router.get('/announcements', (req, res) => {
-  const stationId = req.query.station_id;
-  const rows = db
-    .prepare(`SELECT * FROM announcements WHERE expires_at IS NULL OR expires_at > datetime('now') ORDER BY id DESC`)
-    .all();
-  const filtered = stationId
-    ? rows.filter((a) => a.station_scope === 'all' || (a.station_scope || '').split(',').includes(String(stationId)))
-    : rows;
-  res.json(filtered);
-});
-
-/* ============================ المباني (الكليات) ============================ */
-router.get('/buildings', (req, res) => {
-  res.json(db.prepare('SELECT * FROM buildings ORDER BY name_ar ASC').all());
-});
-
-function nearestStationTo(point, stations) {
-  let nearest = null, nearestDist = Infinity;
-  stations.forEach((s) => {
-    const d = haversineMeters(point.lat, point.lng, s.lat, s.lng);
-    if (d < nearestDist) { nearestDist = d; nearest = s; }
-  });
-  return { station: nearest, distanceMeters: Math.round(nearestDist) };
-}
-
-function computeEtaAlongRoute(bus, routeId, targetStationId) {
-  if (!bus.next_station_id) return null;
-  const seq = db.prepare(`
-    SELECT s.id as station_id, s.lat, s.lng, rs.sequence
-    FROM route_stations rs JOIN stations s ON s.id = rs.station_id
-    WHERE rs.route_id = ? ORDER BY rs.sequence ASC
-  `).all(routeId);
-  const n = seq.length;
-  const nextIdx = seq.findIndex((s) => s.station_id === bus.next_station_id);
-  if (nextIdx === -1 || n === 0) return null;
-
-  let targetIdx = -1, minSteps = Infinity;
-  seq.forEach((s, i) => {
-    if (s.station_id === targetStationId) {
-      const steps = (i - nextIdx + n) % n;
-      if (steps < minSteps) { minSteps = steps; targetIdx = i; }
-    }
-  });
-  if (targetIdx === -1) return null;
-
-  let totalMeters = haversineMeters(bus.current_lat, bus.current_lng, seq[nextIdx].lat, seq[nextIdx].lng);
-  let idx = nextIdx;
-  while (idx !== targetIdx) {
-    const nextI = (idx + 1) % n;
-    totalMeters += haversineMeters(seq[idx].lat, seq[idx].lng, seq[nextI].lat, seq[nextI].lng);
-    idx = nextI;
-  }
-  return estimateEtaSeconds(totalMeters, bus.current_speed);
-}
-
-// إيجاد أقرب محطة لمبنى معيّن + كل الحافلات القادمة إليها (تُستخدم بشاشة اللمس القديمة إن لزم)
-router.get('/buildings/:id/arrivals', (req, res) => {
-  const building = db.prepare('SELECT * FROM buildings WHERE id=?').get(req.params.id);
-  if (!building) return res.status(404).json({ error: 'المبنى غير موجود' });
-
-  const stations = db.prepare('SELECT * FROM stations').all();
-  if (!stations.length) return res.json({ station: null, distanceMeters: null, buses: [] });
-
-  const { station: nearest, distanceMeters } = nearestStationTo(building, stations);
-
-  const candidateBuses = db.prepare(`
-    SELECT DISTINCT b.* FROM buses b
-    JOIN route_stations rs ON rs.route_id = b.route_id
-    WHERE rs.station_id = ? AND b.current_lat IS NOT NULL AND b.current_lng IS NOT NULL
-  `).all(nearest.id);
-
-  const enriched = candidateBuses.map((b) => {
-    const route = b.route_id ? db.prepare('SELECT * FROM routes WHERE id=?').get(b.route_id) : null;
-    const routeGeometry = route && route.geometry ? JSON.parse(route.geometry) : null;
-    const { device_key, ...safe } = b;
-    const _etaSeconds = b.route_id ? computeEtaAlongRoute(b, b.route_id, nearest.id) : null;
-    return { ...safe, route: route ? { ...route, geometry: routeGeometry } : null, _etaSeconds };
-  });
-
-  enriched.sort((a, b) => (a._etaSeconds ?? 1e9) - (b._etaSeconds ?? 1e9));
-  res.json({ station: nearest, distanceMeters, buses: enriched });
-});
-
-// نقطة انطلاق ثابتة (محطة الشاشة نفسها) + وجهة (مبنى) — يرجع الحافلات على المسارات الصحيحة بينهم فقط
-router.get('/stations/:originStationId/to-building/:destId/arrivals', (req, res) => {
-  const originStation = db.prepare('SELECT * FROM stations WHERE id=?').get(req.params.originStationId);
-  const dest = db.prepare('SELECT * FROM buildings WHERE id=?').get(req.params.destId);
-  if (!originStation || !dest) return res.status(404).json({ error: 'بيانات غير صالحة' });
-
-  const stations = db.prepare('SELECT * FROM stations').all();
-  const { station: destStation, distanceMeters } = nearestStationTo(dest, stations);
-
-  const validRoutes = db.prepare(`
-    SELECT r.* FROM routes r
-    WHERE EXISTS (SELECT 1 FROM route_stations rs WHERE rs.route_id=r.id AND rs.station_id=?)
-      AND EXISTS (SELECT 1 FROM route_stations rs2 WHERE rs2.route_id=r.id AND rs2.station_id=?)
-  `).all(originStation.id, destStation.id);
-
-  if (!validRoutes.length) {
-    return res.json({ originStation, destStation, distanceMeters, buses: [], noRouteFound: true });
-  }
-
-  const routeIds = validRoutes.map((r) => r.id);
-  const placeholders = routeIds.map(() => '?').join(',');
-  const candidateBuses = db.prepare(
-    `SELECT * FROM buses WHERE route_id IN (${placeholders}) AND current_lat IS NOT NULL AND current_lng IS NOT NULL`
-  ).all(...routeIds);
-
-  const enriched = candidateBuses.map((b) => {
-    const route = validRoutes.find((r) => r.id === b.route_id);
-    const routeGeometry = route && route.geometry ? JSON.parse(route.geometry) : null;
-    const { device_key, ...safe } = b;
-    const _etaSeconds = computeEtaAlongRoute(b, b.route_id, destStation.id);
-    return { ...safe, route: route ? { ...route, geometry: routeGeometry } : null, _etaSeconds };
-  });
-
-  enriched.sort((a, b) => (a._etaSeconds ?? 1e9) - (b._etaSeconds ?? 1e9));
-  res.json({ originStation, destStation, distanceMeters, buses: enriched });
-});
-
-module.exports = router;
