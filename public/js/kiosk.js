@@ -1,4 +1,4 @@
-// kiosk.js — شاشة اللمس التفاعلية: اختيار المبنى/الكلية، والنظام يجد أقرب محطة ويعرض الحافلات القادمة + خط السير
+// kiosk.js — شاشة اللمس: إعداد محطة الشاشة نفسها لمرة واحدة (يُحفظ بالجهاز)، ثم الطالبة تختار وجهتها فقط
 
 applyLang();
 document.getElementById('lang-toggle').addEventListener('click', (e) => {
@@ -7,76 +7,83 @@ document.getElementById('lang-toggle').addEventListener('click', (e) => {
 });
 document.addEventListener('langchange', () => {
   if (document.getElementById('destinations-view').classList.contains('active')) renderDestinations();
-  if (document.getElementById('arrivals-view').classList.contains('active') && currentBuildingId) {
-    loadArrivals(currentBuildingId, currentBuildingName);
+  if (document.getElementById('arrivals-view').classList.contains('active') && currentDestId) {
+    loadArrivals(currentDestId, currentDestName);
   }
 });
 
+const HOME_STATION_KEY = 'kiosk_home_station_id';
+const HOME_STATION_NAME_KEY = 'kiosk_home_station_name';
+
 let buildingsCache = [];
-let currentBuildingId = null;
-let currentBuildingName = '';
+let stationsCache = [];
+let currentDestId = null;
+let currentDestName = '';
 let miniMap = null;
 let miniMapMarkers = [];
 
 function busNumber(name) { const m = (name || '').match(/(\d+)/); return m ? m[1] : '•'; }
+function getHomeStationId() { return localStorage.getItem(HOME_STATION_KEY); }
 
-function ensureMiniMap() {
-  if (miniMap) return miniMap;
-  miniMap = L.map('mini-map', { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, tap: false });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
-  return miniMap;
-}
-
-function updateMiniMap(building, station, nearestBus) {
-  try {
-  const map = ensureMiniMap();
-  miniMapMarkers.forEach((m) => map.removeLayer(m));
-  miniMapMarkers = [];
-
-  const bounds = [[building.lat, building.lng]];
-
-  const buildingIcon = L.divIcon({ className: '', html: `<div style="background:${building.color || '#2eb386'};width:26px;height:26px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:14px">${building.icon || '🏛️'}</div>`, iconSize: [26, 26] });
-  miniMapMarkers.push(L.marker([building.lat, building.lng], { icon: buildingIcon }).addTo(map));
-
-  if (station) {
-    const stationIcon = L.divIcon({ className: '', html: `<div style="background:#c9a668;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`, iconSize: [16, 16] });
-    miniMapMarkers.push(L.marker([station.lat, station.lng], { icon: stationIcon }).addTo(map));
-    miniMapMarkers.push(L.polyline([[building.lat, building.lng], [station.lat, station.lng]], { color: '#2eb386', weight: 3, dashArray: '6,6', opacity: .7 }).addTo(map));
-    bounds.push([station.lat, station.lng]);
-  }
-
-    if (nearestBus && nearestBus.route && Array.isArray(nearestBus.route.geometry)) {
-    const validPoints = nearestBus.route.geometry.filter((p) =>
-      Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number' && !isNaN(p[0]) && !isNaN(p[1])
-    );
-    if (validPoints.length > 1) {
-      const routeLine = L.polyline(validPoints, { color: nearestBus.route.color || '#2563eb', weight: 4, opacity: .55 }).addTo(map);
-      miniMapMarkers.push(routeLine);
-    }
-  }
-
-  if (nearestBus && nearestBus.current_lat && nearestBus.current_lng) {
-    const busColor = nearestBus.color || '#2eb386';
-    const busIcon = L.divIcon({ className: '', html: `<div style="background:${busColor};width:22px;height:22px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:800">🚌</div>`, iconSize: [22, 22] });
-    miniMapMarkers.push(L.marker([nearestBus.current_lat, nearestBus.current_lng], { icon: busIcon }).addTo(map));
-    bounds.push([nearestBus.current_lat, nearestBus.current_lng]);
-  }
-
-  if (bounds.length > 1) map.fitBounds(L.latLngBounds(bounds), { padding: [30, 30] });
-  else map.setView([building.lat, building.lng], 17);
-
-    setTimeout(() => map.invalidateSize(), 100);
-  } catch (e) {
-    console.error('خطأ برسم الخريطة المصغّرة:', e.message);
+/* ---------------- إعداد الشاشة (مرة واحدة) ---------------- */
+async function checkSetup() {
+  const homeId = getHomeStationId();
+  if (homeId) {
+    showIdle();
+  } else {
+    await showSetup();
   }
 }
 
+async function showSetup() {
+  document.getElementById('setup-view').style.display = 'flex';
+  document.getElementById('idle-view').style.display = 'none';
+  document.getElementById('destinations-view').classList.remove('active');
+  document.getElementById('arrivals-view').classList.remove('active');
+
+  if (!stationsCache.length) stationsCache = await (await fetch('/api/stations')).json();
+  const lang = getLang();
+  document.getElementById('setup-grid').innerHTML = stationsCache.map((s) => `
+    <div class="dest-card" data-station-id="${s.id}">
+      <div class="dest-icon">📍</div>
+      <h3>${lang === 'ar' ? s.name_ar : s.name_en}</h3>
+    </div>`).join('');
+  document.querySelectorAll('#setup-grid .dest-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      const id = card.dataset.stationId;
+      const station = stationsCache.find((s) => s.id == id);
+      localStorage.setItem(HOME_STATION_KEY, id);
+      localStorage.setItem(HOME_STATION_NAME_KEY, JSON.stringify({ ar: station.name_ar, en: station.name_en }));
+      document.getElementById('setup-view').style.display = 'none';
+      showIdle();
+    });
+  });
+}
+
+document.getElementById('settings-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (confirm('هل تريد إعادة ضبط محطة هذه الشاشة؟')) {
+    localStorage.removeItem(HOME_STATION_KEY);
+    localStorage.removeItem(HOME_STATION_NAME_KEY);
+    showSetup();
+  }
+});
+
+/* ---------------- الحالة الافتراضية ---------------- */
 function showIdle() {
+  document.getElementById('setup-view').style.display = 'none';
   document.getElementById('idle-view').style.display = 'flex';
   document.getElementById('destinations-view').classList.remove('active');
   document.getElementById('arrivals-view').classList.remove('active');
+
+  const nameJson = localStorage.getItem(HOME_STATION_NAME_KEY);
+  if (nameJson) {
+    const name = JSON.parse(nameJson);
+    document.getElementById('idle-station-label').textContent = (getLang() === 'ar' ? 'أنتِ الآن عند: ' : 'You are at: ') + (getLang() === 'ar' ? name.ar : name.en);
+  }
 }
 
+/* ---------------- اختيار الوجهة ---------------- */
 async function showDestinations() {
   document.getElementById('idle-view').style.display = 'none';
   document.getElementById('arrivals-view').classList.remove('active');
@@ -106,47 +113,100 @@ function renderDestinations() {
   });
 }
 
-async function loadArrivals(buildingId, buildingName) {
-  currentBuildingId = buildingId;
-  currentBuildingName = buildingName;
+/* ---------------- الخريطة المصغّرة ---------------- */
+function ensureMiniMap() {
+  if (miniMap) return miniMap;
+  miniMap = L.map('mini-map', { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, tap: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
+  return miniMap;
+}
+
+function updateMiniMap(originStation, destStation, nearestBus) {
+  try {
+    const map = ensureMiniMap();
+    miniMapMarkers.forEach((m) => map.removeLayer(m));
+    miniMapMarkers = [];
+    const bounds = [];
+
+    if (originStation) {
+      const originIcon = L.divIcon({ className: '', html: `<div style="background:#145c46;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`, iconSize: [16, 16] });
+      miniMapMarkers.push(L.marker([originStation.lat, originStation.lng], { icon: originIcon }).addTo(map));
+      bounds.push([originStation.lat, originStation.lng]);
+    }
+
+    if (destStation) {
+      const destIcon = L.divIcon({ className: '', html: `<div style="background:#c9a668;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`, iconSize: [16, 16] });
+      miniMapMarkers.push(L.marker([destStation.lat, destStation.lng], { icon: destIcon }).addTo(map));
+      bounds.push([destStation.lat, destStation.lng]);
+    }
+
+    if (nearestBus && nearestBus.route && Array.isArray(nearestBus.route.geometry)) {
+      const validPoints = nearestBus.route.geometry.filter((p) =>
+        Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number' && !isNaN(p[0]) && !isNaN(p[1])
+      );
+      if (validPoints.length > 1) {
+        miniMapMarkers.push(L.polyline(validPoints, { color: nearestBus.route.color || '#2563eb', weight: 4, opacity: .6 }).addTo(map));
+      }
+    }
+
+    if (nearestBus && nearestBus.current_lat && nearestBus.current_lng) {
+      const busColor = (nearestBus.route && nearestBus.route.color) || '#2eb386';
+      const busIcon = L.divIcon({ className: '', html: `<div style="background:${busColor};width:22px;height:22px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px">🚌</div>`, iconSize: [22, 22] });
+      miniMapMarkers.push(L.marker([nearestBus.current_lat, nearestBus.current_lng], { icon: busIcon }).addTo(map));
+      bounds.push([nearestBus.current_lat, nearestBus.current_lng]);
+    }
+
+    if (bounds.length > 1) map.fitBounds(L.latLngBounds(bounds), { padding: [30, 30] });
+    else if (bounds.length === 1) map.setView(bounds[0], 16);
+
+    setTimeout(() => map.invalidateSize(), 100);
+  } catch (e) {
+    console.error('خطأ برسم الخريطة المصغّرة:', e.message);
+  }
+}
+
+/* ---------------- الحافلات القادمة ---------------- */
+async function loadArrivals(destId, destName) {
+  currentDestId = destId;
+  currentDestName = destName;
   document.getElementById('destinations-view').classList.remove('active');
   document.getElementById('arrivals-view').classList.add('active');
-  document.getElementById('arrivals-dest-name').textContent = buildingName;
+  document.getElementById('arrivals-dest-name').textContent = destName;
 
   const lang = getLang();
-  const building = buildingsCache.find((b) => b.id === buildingId);
-  const data = await (await fetch(`/api/buildings/${buildingId}/arrivals`)).json();
+  const homeStationId = getHomeStationId();
+  const data = await (await fetch(`/api/stations/${homeStationId}/to-building/${destId}/arrivals`)).json();
   const el = document.getElementById('arrivals-list');
   const noteEl = document.getElementById('nearest-station-note');
 
-  if (building) updateMiniMap(building, data.station, data.buses && data.buses[0]);
+  updateMiniMap(data.originStation, data.destStation, data.buses && data.buses[0]);
 
-  if (!data.station) {
-    if (noteEl) noteEl.textContent = '';
-    el.innerHTML = `<div class="no-buses">${lang === 'ar' ? 'لا توجد محطات مسجّلة بعد بالنظام' : 'No stations registered in the system yet'}</div>`;
+  if (!data.destStation) {
+    noteEl.textContent = '';
+    el.innerHTML = `<div class="no-buses">${lang === 'ar' ? 'لا توجد محطات مسجّلة بعد بالنظام' : 'No stations registered yet'}</div>`;
     return;
   }
 
-  const stationName = lang === 'ar' ? data.station.name_ar : data.station.name_en;
-  const distanceText = data.distanceMeters != null
-    ? (lang === 'ar' ? `على بعد ${data.distanceMeters} متر تقريبًا سيرًا` : `about ${data.distanceMeters}m walk`)
-    : '';
-  if (noteEl) {
-    noteEl.textContent = lang === 'ar' ? `أقرب محطة: ${stationName} — ${distanceText}` : `Nearest station: ${stationName} — ${distanceText}`;
+  const destStationName = lang === 'ar' ? data.destStation.name_ar : data.destStation.name_en;
+  noteEl.textContent = lang === 'ar' ? `أقرب محطة للوجهة: ${destStationName}` : `Nearest station to destination: ${destStationName}`;
+
+  if (data.noRouteFound) {
+    el.innerHTML = `<div class="no-buses">${lang === 'ar' ? 'لا يوجد مسار يربط محطتك الحالية بهذه الوجهة مباشرة' : 'No route directly connects your current station to this destination'}</div>`;
+    return;
   }
 
   if (!data.buses.length) {
-    el.innerHTML = `<div class="no-buses">${lang === 'ar' ? 'لا توجد حافلات قادمة لهذه المحطة حاليًا' : 'No buses currently arriving at this station'}</div>`;
+    el.innerHTML = `<div class="no-buses">${lang === 'ar' ? 'لا توجد حافلات قادمة حاليًا على هذا المسار' : 'No buses currently arriving on this route'}</div>`;
     return;
   }
 
   el.innerHTML = data.buses.map((b) => {
-    const color = b.color || '#2eb386';
+    const routeColor = (b.route && b.route.color) || '#2eb386';
     const routeName = b.route ? (lang === 'ar' ? b.route.name_ar : b.route.name_en) : '—';
     const etaMinutes = b._etaSeconds == null ? '—' : (b._etaSeconds < 60 ? '<1' : Math.round(b._etaSeconds / 60));
     return `
-      <div class="arrival-card" style="border-inline-start-color:${color}">
-        <div class="arrival-bus-circle" style="background:${color}">${busNumber(b.name)}</div>
+      <div class="arrival-card" style="border-inline-start-color:${routeColor}">
+        <div class="arrival-bus-circle" style="background:${routeColor}">${busNumber(b.name)}</div>
         <div class="arrival-info">
           <div class="route-name">${routeName}</div>
           <div class="bus-name">Bus ${busNumber(b.name)}</div>
@@ -158,7 +218,7 @@ async function loadArrivals(buildingId, buildingName) {
 
 /* ---------------- الأحداث ---------------- */
 document.getElementById('tap-prompt').addEventListener('click', showDestinations);
-document.getElementById('idle-view').addEventListener('click', (e) => { if (e.target.id !== 'lang-toggle') showDestinations(); });
+document.getElementById('idle-view').addEventListener('click', (e) => { if (e.target.id !== 'lang-toggle' && e.target.id !== 'settings-btn') showDestinations(); });
 document.getElementById('close-btn').addEventListener('click', showIdle);
 document.getElementById('back-btn').addEventListener('click', showDestinations);
 
@@ -168,9 +228,12 @@ function resetIdleTimer() { clearTimeout(idleTimer); idleTimer = setTimeout(show
 document.addEventListener('click', resetIdleTimer);
 resetIdleTimer();
 
-/* ---------------- تحديث تلقائي كل 15 ثانية إن كانت الشاشة مفتوحة على مبنى معيّن ---------------- */
+/* ---------------- تحديث تلقائي كل 15 ثانية ---------------- */
 setInterval(() => {
-  if (currentBuildingId && document.getElementById('arrivals-view').classList.contains('active')) {
-    loadArrivals(currentBuildingId, currentBuildingName);
+  if (currentDestId && document.getElementById('arrivals-view').classList.contains('active')) {
+    loadArrivals(currentDestId, currentDestName);
   }
 }, 15000);
+
+/* ---------------- التشغيل ---------------- */
+checkSetup();
