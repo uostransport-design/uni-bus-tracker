@@ -90,5 +90,36 @@ router.get('/announcements', (req, res) => {
     : rows;
   res.json(filtered);
 });
+router.get('/buildings', (req, res) => {
+  res.json(db.prepare('SELECT * FROM buildings ORDER BY name_ar ASC').all());
+});
 
+router.get('/buildings/:id/arrivals', (req, res) => {
+  const building = db.prepare('SELECT * FROM buildings WHERE id=?').get(req.params.id);
+  if (!building) return res.status(404).json({ error: 'المبنى غير موجود' });
+
+  const stations = db.prepare('SELECT * FROM stations').all();
+  if (!stations.length) return res.json({ station: null, distanceMeters: null, buses: [] });
+
+  let nearest = null, nearestDist = Infinity;
+  stations.forEach((s) => {
+    const d = haversineMeters(building.lat, building.lng, s.lat, s.lng);
+    if (d < nearestDist) { nearestDist = d; nearest = s; }
+  });
+
+  const buses = db.prepare('SELECT * FROM buses WHERE next_station_id = ?').all(nearest.id);
+  const enriched = buses.map((b) => {
+    const route = b.route_id ? db.prepare('SELECT * FROM routes WHERE id=?').get(b.route_id) : null;
+    const { device_key, ...safe } = b;
+    let _etaSeconds = null;
+    if (b.current_lat != null && b.current_lng != null) {
+      const dist = haversineMeters(b.current_lat, b.current_lng, nearest.lat, nearest.lng);
+      _etaSeconds = estimateEtaSeconds(dist, b.current_speed);
+    }
+    return { ...safe, route, _etaSeconds };
+  });
+  enriched.sort((a, b) => (a._etaSeconds ?? 1e9) - (b._etaSeconds ?? 1e9));
+
+  res.json({ station: nearest, distanceMeters: Math.round(nearestDist), buses: enriched });
+});
 module.exports = router;
