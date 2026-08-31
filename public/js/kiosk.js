@@ -1,4 +1,4 @@
-// kiosk.js — شاشة اللمس التفاعلية: اختيار الوجهة وعرض الحافلات القادمة إليها (بيانات حقيقية)
+// kiosk.js — شاشة اللمس التفاعلية: اختيار المبنى/الكلية، والنظام يجد أقرب محطة ويعرض الحافلات القادمة
 
 applyLang();
 document.getElementById('lang-toggle').addEventListener('click', (e) => {
@@ -7,14 +7,14 @@ document.getElementById('lang-toggle').addEventListener('click', (e) => {
 });
 document.addEventListener('langchange', () => {
   if (document.getElementById('destinations-view').classList.contains('active')) renderDestinations();
-  if (document.getElementById('arrivals-view').classList.contains('active') && currentStationId) {
-    loadArrivals(currentStationId, currentStationName);
+  if (document.getElementById('arrivals-view').classList.contains('active') && currentBuildingId) {
+    loadArrivals(currentBuildingId, currentBuildingName);
   }
 });
 
-let stationsCache = [];
-let currentStationId = null;
-let currentStationName = '';
+let buildingsCache = [];
+let currentBuildingId = null;
+let currentBuildingName = '';
 
 function busNumber(name) { const m = (name || '').match(/(\d+)/); return m ? m[1] : '•'; }
 
@@ -28,52 +28,66 @@ async function showDestinations() {
   document.getElementById('idle-view').style.display = 'none';
   document.getElementById('arrivals-view').classList.remove('active');
   document.getElementById('destinations-view').classList.add('active');
-  if (!stationsCache.length) stationsCache = await (await fetch('/api/stations')).json();
+  if (!buildingsCache.length) buildingsCache = await (await fetch('/api/buildings')).json();
   renderDestinations();
 }
 
 function renderDestinations() {
   const lang = getLang();
   const grid = document.getElementById('dest-grid');
-  if (!stationsCache.length) {
-    grid.innerHTML = `<div class="dest-empty">${lang === 'ar' ? 'لا توجد محطات مسجّلة بعد' : 'No stations registered yet'}</div>`;
+  if (!buildingsCache.length) {
+    grid.innerHTML = `<div class="dest-empty">${lang === 'ar' ? 'لا توجد مبانٍ مسجّلة بعد' : 'No buildings registered yet'}</div>`;
     return;
   }
-  grid.innerHTML = stationsCache.map((s) => `
-    <div class="dest-card" data-station-id="${s.id}">
-      <div class="dest-icon">📍</div>
-      <h3>${lang === 'ar' ? s.name_ar : s.name_en}</h3>
+  grid.innerHTML = buildingsCache.map((b) => `
+    <div class="dest-card" data-building-id="${b.id}" style="border-color:${b.color || '#2eb386'}33">
+      <div class="dest-icon" style="color:${b.color || '#2eb386'}">${b.icon || '🏛️'}</div>
+      <h3>${lang === 'ar' ? b.name_ar : b.name_en}</h3>
     </div>`).join('');
   grid.querySelectorAll('.dest-card').forEach((card) => {
     card.addEventListener('click', () => {
-      const id = Number(card.dataset.stationId);
-      const station = stationsCache.find((s) => s.id === id);
-      loadArrivals(id, lang === 'ar' ? station.name_ar : station.name_en);
+      const id = Number(card.dataset.buildingId);
+      const building = buildingsCache.find((b) => b.id === id);
+      loadArrivals(id, lang === 'ar' ? building.name_ar : building.name_en);
     });
   });
 }
 
-async function loadArrivals(stationId, stationName) {
-  currentStationId = stationId;
-  currentStationName = stationName;
+async function loadArrivals(buildingId, buildingName) {
+  currentBuildingId = buildingId;
+  currentBuildingName = buildingName;
   document.getElementById('destinations-view').classList.remove('active');
   document.getElementById('arrivals-view').classList.add('active');
-  document.getElementById('arrivals-dest-name').textContent = stationName;
+  document.getElementById('arrivals-dest-name').textContent = buildingName;
 
   const lang = getLang();
-  const buses = await (await fetch(`/api/stations/${stationId}/buses`)).json();
+  const data = await (await fetch(`/api/buildings/${buildingId}/arrivals`)).json();
   const el = document.getElementById('arrivals-list');
+  const noteEl = document.getElementById('nearest-station-note');
 
-  if (!buses.length) {
-    el.innerHTML = `<div class="no-buses">${lang === 'ar' ? 'لا توجد حافلات قادمة إلى هذه الوجهة حاليًا' : 'No buses currently arriving at this destination'}</div>`;
+  if (!data.station) {
+    if (noteEl) noteEl.textContent = '';
+    el.innerHTML = `<div class="no-buses">${lang === 'ar' ? 'لا توجد محطات مسجّلة بعد بالنظام' : 'No stations registered in the system yet'}</div>`;
     return;
   }
 
-  el.innerHTML = buses.map((b) => {
+  const stationName = lang === 'ar' ? data.station.name_ar : data.station.name_en;
+  const distanceText = data.distanceMeters != null
+    ? (lang === 'ar' ? `على بعد ${data.distanceMeters} متر تقريبًا سيرًا` : `about ${data.distanceMeters}m walk`)
+    : '';
+  if (noteEl) {
+    noteEl.textContent = lang === 'ar' ? `أقرب محطة: ${stationName} — ${distanceText}` : `Nearest station: ${stationName} — ${distanceText}`;
+  }
+
+  if (!data.buses.length) {
+    el.innerHTML = `<div class="no-buses">${lang === 'ar' ? 'لا توجد حافلات قادمة لهذه المحطة حاليًا' : 'No buses currently arriving at this station'}</div>`;
+    return;
+  }
+
+  el.innerHTML = data.buses.map((b) => {
     const color = b.color || '#2eb386';
     const routeName = b.route ? (lang === 'ar' ? b.route.name_ar : b.route.name_en) : '—';
-    const etaText = b._etaSeconds == null ? '—' : (b._etaSeconds < 60 ? (lang === 'ar' ? '<1' : '<1') : Math.round(b._etaSeconds / 60));
-    const unitText = b._etaSeconds != null && b._etaSeconds < 60 ? (lang === 'ar' ? 'دقيقة' : 'min') : (lang === 'ar' ? 'دقيقة' : 'min');
+    const etaMinutes = b._etaSeconds == null ? '—' : (b._etaSeconds < 60 ? '<1' : Math.round(b._etaSeconds / 60));
     return `
       <div class="arrival-card" style="border-inline-start-color:${color}">
         <div class="arrival-bus-circle" style="background:${color}">${busNumber(b.name)}</div>
@@ -81,7 +95,7 @@ async function loadArrivals(stationId, stationName) {
           <div class="route-name">${routeName}</div>
           <div class="bus-name">Bus ${busNumber(b.name)}</div>
         </div>
-        <div class="arrival-eta"><div class="num">${etaText}</div><div class="unit">${unitText}</div></div>
+        <div class="arrival-eta"><div class="num">${etaMinutes}</div><div class="unit">${lang === 'ar' ? 'دقيقة' : 'min'}</div></div>
       </div>`;
   }).join('');
 }
@@ -98,9 +112,9 @@ function resetIdleTimer() { clearTimeout(idleTimer); idleTimer = setTimeout(show
 document.addEventListener('click', resetIdleTimer);
 resetIdleTimer();
 
-/* ---------------- تحديث تلقائي لقائمة الحافلات القادمة كل 15 ثانية إن كانت الشاشة مفتوحة على وجهة ---------------- */
+/* ---------------- تحديث تلقائي كل 15 ثانية إن كانت الشاشة مفتوحة على مبنى معيّن ---------------- */
 setInterval(() => {
-  if (currentStationId && document.getElementById('arrivals-view').classList.contains('active')) {
-    loadArrivals(currentStationId, currentStationName);
+  if (currentBuildingId && document.getElementById('arrivals-view').classList.contains('active')) {
+    loadArrivals(currentBuildingId, currentBuildingName);
   }
 }, 15000);
