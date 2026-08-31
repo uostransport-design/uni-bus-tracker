@@ -25,27 +25,42 @@ function ensureMiniMap() {
   return miniMap;
 }
 
-function updateMiniMap(building, station) {
+function updateMiniMap(building, station, nearestBus) {
   const map = ensureMiniMap();
   miniMapMarkers.forEach((m) => map.removeLayer(m));
   miniMapMarkers = [];
 
-  const buildingIcon = L.divIcon({ className: '', html: `<div style="background:${building.color || '#2eb386'};width:26px;height:26px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:14px">${building.icon || '🏛️'}</div>`, iconSize: [26, 26] });
-  const stationIcon = L.divIcon({ className: '', html: `<div style="background:#c9a668;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`, iconSize: [16, 16] });
+  const bounds = [[building.lat, building.lng]];
 
-  const bMarker = L.marker([building.lat, building.lng], { icon: buildingIcon }).addTo(map);
-  miniMapMarkers.push(bMarker);
+  const buildingIcon = L.divIcon({ className: '', html: `<div style="background:${building.color || '#2eb386'};width:26px;height:26px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:14px">${building.icon || '🏛️'}</div>`, iconSize: [26, 26] });
+  miniMapMarkers.push(L.marker([building.lat, building.lng], { icon: buildingIcon }).addTo(map));
 
   if (station) {
-    const sMarker = L.marker([station.lat, station.lng], { icon: stationIcon }).addTo(map);
-    miniMapMarkers.push(sMarker);
-    const line = L.polyline([[building.lat, building.lng], [station.lat, station.lng]], { color: '#2eb386', weight: 3, dashArray: '6,6', opacity: .7 }).addTo(map);
-    miniMapMarkers.push(line);
-    map.fitBounds(L.latLngBounds([[building.lat, building.lng], [station.lat, station.lng]]), { padding: [30, 30] });
-  } else {
-    map.setView([building.lat, building.lng], 17);
+    const stationIcon = L.divIcon({ className: '', html: `<div style="background:#c9a668;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`, iconSize: [16, 16] });
+    miniMapMarkers.push(L.marker([station.lat, station.lng], { icon: stationIcon }).addTo(map));
+    miniMapMarkers.push(L.polyline([[building.lat, building.lng], [station.lat, station.lng]], { color: '#2eb386', weight: 3, dashArray: '6,6', opacity: .7 }).addTo(map));
+    bounds.push([station.lat, station.lng]);
   }
+
+  // خط سير الحافلة الأقرب (إن وُجد مسار محسوب لها)
+  if (nearestBus && nearestBus.route && nearestBus.route.geometry && nearestBus.route.geometry.length > 1) {
+    const routeLine = L.polyline(nearestBus.route.geometry, { color: nearestBus.route.color || '#2563eb', weight: 4, opacity: .55 }).addTo(map);
+    miniMapMarkers.push(routeLine);
+  }
+
+  // موقع الحافلة الأقرب الحي
+  if (nearestBus && nearestBus.current_lat && nearestBus.current_lng) {
+    const busColor = nearestBus.color || '#2eb386';
+    const busIcon = L.divIcon({ className: '', html: `<div style="background:${busColor};width:22px;height:22px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:800">🚌</div>`, iconSize: [22, 22] });
+    miniMapMarkers.push(L.marker([nearestBus.current_lat, nearestBus.current_lng], { icon: busIcon }).addTo(map));
+    bounds.push([nearestBus.current_lat, nearestBus.current_lng]);
+  }
+
+  if (bounds.length > 1) map.fitBounds(L.latLngBounds(bounds), { padding: [30, 30] });
+  else map.setView([building.lat, building.lng], 17);
+
   setTimeout(() => map.invalidateSize(), 100);
+}
 }
 
 function busNumber(name) { const m = (name || '').match(/(\d+)/); return m ? m[1] : '•'; }
@@ -97,7 +112,7 @@ async function loadArrivals(buildingId, buildingName) {
   const data = await (await fetch(`/api/buildings/${buildingId}/arrivals`)).json();
   const el = document.getElementById('arrivals-list');
   const noteEl = document.getElementById('nearest-station-note');
-  if (building) updateMiniMap(building, data.station);
+    if (building) updateMiniMap(building, data.station, data.buses && data.buses[0]);
 
   if (!data.station) {
     if (noteEl) noteEl.textContent = '';
