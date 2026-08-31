@@ -35,9 +35,10 @@ router.get('/stations', (req, res) => {
 router.get('/stations/:id/buses', (req, res) => {
   const stationId = Number(req.params.id);
   const station = db.prepare('SELECT * FROM stations WHERE id=?').get(stationId);
-  const buses = db.prepare('SELECT * FROM buses WHERE next_station_id = ?').all(stationId);
+  const buses = db.prepare('SELECT * FROM buses WHERE next_station_id = ?').all(nearest.id);
   const enriched = buses.map((b) => {
-    const route = b.route_id ? db.prepare('SELECT * FROM routes WHERE id=?').get(b.route_id) : null;
+    let route = b.route_id ? db.prepare('SELECT * FROM routes WHERE id=?').get(b.route_id) : null;
+    if (route) route = { ...route, geometry: route.geometry ? JSON.parse(route.geometry) : null };
     const { device_key, ...safe } = b;
     let _etaSeconds = null;
     if (station && b.current_lat != null && b.current_lng != null) {
