@@ -108,17 +108,53 @@ router.get('/buildings/:id/arrivals', (req, res) => {
     if (d < nearestDist) { nearestDist = d; nearest = s; }
   });
 
-  const buses = db.prepare('SELECT * FROM buses WHERE next_station_id = ?').all(nearest.id);
-  const enriched = buses.map((b) => {
+  const candidateBuses = db.prepare(`
+    SELECT DISTINCT b.* FROM buses b
+    JOIN route_stations rs ON rs.route_id = b.route_id
+    WHERE rs.station_id = ? AND b.current_lat IS NOT NULL AND b.current_lng IS NOT NULL
+  `).all(nearest.id);
+
+  const enriched = candidateBuses.map((b) => {
     const route = b.route_id ? db.prepare('SELECT * FROM routes WHERE id=?').get(b.route_id) : null;
+    const routeGeometry = route && route.geometry ? JSON.parse(route.geometry) : null;
     const { device_key, ...safe } = b;
+
     let _etaSeconds = null;
-    if (b.current_lat != null && b.current_lng != null) {
-      const dist = haversineMeters(b.current_lat, b.current_lng, nearest.lat, nearest.lng);
-      _etaSeconds = estimateEtaSeconds(dist, b.current_speed);
+    if (b.route_id && b.next_station_id) {
+      const seq = db.prepare(`
+        SELECT s.id as station_id, s.lat, s.lng, rs.sequence
+        FROM route_stations rs JOIN stations s ON s.id = rs.station_id
+        WHERE rs.route_id = ? ORDER BY rs.sequence ASC
+      `).all(b.route_id);
+
+      const n = seq.length;
+      const nextIdx = seq.findIndex((s) => s.station_id === b.next_station_id);
+
+      if (nextIdx !== -1 && n > 0) {
+        let targetIdx = -1, minSteps = Infinity;
+        seq.forEach((s, i) => {
+          if (s.station_id === nearest.id) {
+            const steps = (i - nextIdx + n) % n;
+            if (steps < minSteps) { minSteps = steps; targetIdx = i; }
+          }
+        });
+
+        if (targetIdx !== -1) {
+          let totalMeters = haversineMeters(b.current_lat, b.current_lng, seq[nextIdx].lat, seq[nextIdx].lng);
+          let idx = nextIdx;
+          while (idx !== targetIdx) {
+            const nextI = (idx + 1) % n;
+            totalMeters += haversineMeters(seq[idx].lat, seq[idx].lng, seq[nextI].lat, seq[nextI].lng);
+            idx = nextI;
+          }
+          _etaSeconds = estimateEtaSeconds(totalMeters, b.current_speed);
+        }
+      }
     }
-    return { ...safe, route, _etaSeconds };
+
+    return { ...safe, route: route ? { ...route, geometry: routeGeometry } : null, _etaSeconds };
   });
+
   enriched.sort((a, b) => (a._etaSeconds ?? 1e9) - (b._etaSeconds ?? 1e9));
 
   res.json({ station: nearest, distanceMeters: Math.round(nearestDist), buses: enriched });
