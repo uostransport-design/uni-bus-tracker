@@ -14,6 +14,7 @@
       <button class="nav-item" data-tab="map" data-i18n="admin.nav.map">الخريطة الحية</button>
       <button class="nav-item" data-tab="vehicles" data-i18n="admin.nav.vehicles">المركبات</button>
       <button class="nav-item" data-tab="stations" data-i18n="admin.nav.stations">المحطات</button>
+      <button class="nav-item" data-tab="buildings">المباني</button>
       <button class="nav-item" data-tab="routes" data-i18n="admin.nav.routes">المسارات</button>
       <button class="nav-item" data-tab="drivers" data-i18n="admin.nav.drivers">السائقون</button>
       <button class="nav-item" data-tab="alerts" data-i18n="admin.nav.alerts">التنبيهات</button>
@@ -59,7 +60,14 @@
         <div id="form-station" class="form-panel hidden"></div>
         <div id="table-stations"></div>
       </section>
-
+      <section id="tab-buildings" class="tab">
+        <div class="tab-header">
+          <h2>المباني (الكليات)</h2>
+          <button class="btn-primary" id="btn-add-building">+ إضافة مبنى</button>
+        </div>
+        <div id="form-building" class="form-panel hidden"></div>
+        <div id="table-buildings"></div>
+      </section>
       <section id="tab-routes" class="tab">
         <div class="tab-header">
           <h2 data-i18n="admin.routes.title">المسارات</h2>
