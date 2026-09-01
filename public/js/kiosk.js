@@ -18,7 +18,6 @@ const HOME_STATION_NAME_KEY = 'kiosk_home_station_name';
 let buildingsCache = [];
 let stationsCache = [];
 let allRoutesCache = [];
-let allBusesCache = [];
 let currentDestId = null;
 let currentDestName = '';
 let miniMap = null;
@@ -139,7 +138,8 @@ function ensureMiniMap() {
   return miniMap;
 }
 
-function updateMiniMap(originStation, destStation, relevantRoute, destBuilding) {
+function updateMiniMap(originStation, destStation, relevantRoute, destBuilding, relevantBuses) {
+  relevantBuses = relevantBuses || [];
   try {
     const map = ensureMiniMap();
     miniMapMarkers.forEach((m) => map.removeLayer(m));
@@ -163,8 +163,8 @@ function updateMiniMap(originStation, destStation, relevantRoute, destBuilding) 
       }
     });
 
-    // كل الحافلات (نفس الصفحة الرئيسية)
-    allBusesCache.forEach((b) => {
+    // بس الحافلات اللي فعليًا توصل لهذي الوجهة (مو كل حافلات الجامعة) — تفاديًا لتشتيت الطالبة
+    relevantBuses.forEach((b) => {
       if (b.current_lat == null || b.current_lng == null) return;
       const color = (b.route && b.route.color) || '#2eb386';
       const busIcon = L.divIcon({ className: '', html: `<div style="background:${color};width:24px;height:24px;border-radius:50%;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:800">🚌</div>`, iconSize: [24, 24] });
@@ -227,14 +227,11 @@ async function loadArrivals(destId, destName) {
   const el = document.getElementById('arrivals-list');
   const noteEl = document.getElementById('nearest-station-note');
 
-  [allRoutesCache, allBusesCache] = await Promise.all([
-    fetch('/api/routes').then((r) => r.json()),
-    fetch('/api/buses').then((r) => r.json()),
-  ]);
+  allRoutesCache = await fetch('/api/routes').then((r) => r.json());
 
   const relevantRoute = data.buses && data.buses[0] ? data.buses[0].route : null;
   const destBuilding = buildingsCache.find((b) => b.id === destId);
-  updateMiniMap(data.originStation, data.destStation, relevantRoute, destBuilding);
+  updateMiniMap(data.originStation, data.destStation, relevantRoute, destBuilding, data.buses);
 
   if (!data.destStation) {
     noteEl.textContent = '';
