@@ -707,6 +707,3 @@ setInterval(() => {
     loadArrivals(currentDestId, currentDestName);
   }
 }, 15000);
-
-/* ---------------- التشغيل ---------------- */
-checkSetup();
