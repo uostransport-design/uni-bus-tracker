@@ -21,14 +21,36 @@
     <!-- الحالة الافتراضية -->
     <div id="idle-view">
       <button class="settings-btn" id="settings-btn" title="إعادة ضبط موقع الشاشة">⚙️</button>
-      <div class="current-station-badge" id="idle-station-label">—</div>
-<div class="logo-big"><img src="/assets/logo-icon-only-512.png" alt="UOS" /></div>
-<h1 data-i18n="kiosk.idleTitle">تتبع حافلات الجامعة</h1>
+      <div class="logo-big"><img src="/assets/logo-icon-only-512.png" alt="UOS" /></div>
+      <h1 data-i18n="kiosk.idleTitle">تتبع حافلات الجامعة</h1>
+      <p id="idle-station-label">—</p>
       <div class="tap-prompt" id="tap-prompt">
         <div class="tap-circle">👆</div>
         <span data-i18n="kiosk.tapPrompt">المس الشاشة لمعرفة موعد حافلتك</span>
       </div>
+      <div class="idle-secondary-actions">
+        <button class="secondary-action-btn" id="open-rating-btn">⭐ تقييم الخدمة</button>
+        <button class="secondary-action-btn" id="open-complaint-btn">📢 استفسار / بلاغ</button>
+      </div>
       <button class="lang-btn-kiosk" id="lang-toggle">EN</button>
+    </div>
+
+    <!-- تقييم الخدمة -->
+    <div id="rating-view">
+      <div class="kiosk-header">
+        <div><div class="title">تقييم الخدمة</div><div class="subtitle">رأيك يساعدنا نتحسن</div></div>
+        <button class="close-btn" id="close-rating-btn">✕</button>
+      </div>
+      <div class="rating-body" id="rating-body"></div>
+    </div>
+
+    <!-- استفسار / بلاغ -->
+    <div id="complaint-view">
+      <div class="kiosk-header">
+        <div><div class="title">استفسار / بلاغ</div><div class="subtitle">اختاري نوع البلاغ للتواصل المباشر</div></div>
+        <button class="close-btn" id="close-complaint-btn">✕</button>
+      </div>
+      <div class="complaint-body" id="complaint-body"></div>
     </div>
 
     <!-- اختيار الوجهة (الطالبة) -->
