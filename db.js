@@ -190,3 +190,24 @@ try {
 } catch (e) {
   // العمود موجود بالفعل — لا حاجة لفعل شيء
 }
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ratings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      punctuality INTEGER,
+      cleanliness INTEGER,
+      driver_behavior INTEGER,
+      had_difficulty INTEGER,
+      note TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
+  `);
+  const defaults = [['phone_security', '0500000001'], ['phone_maintenance', '0500000002'], ['phone_transport', '0500000003']];
+  defaults.forEach(([k, v]) => {
+    try { db.exec(`INSERT INTO settings (key, value) VALUES ('${k}', '${v}')`); } catch (e) {}
+  });
+} catch (e) {}
