@@ -381,4 +381,40 @@ router.delete('/buildings/:id', canManage, (req, res) => {
   logAction(req.user, 'delete', 'building', req.params.id);
   res.json({ ok: true });
 });
+/* ============================ التقييمات ============================ */
+router.get('/ratings', (req, res) => {
+  const rows = db.prepare('SELECT * FROM ratings ORDER BY id DESC LIMIT 200').all();
+  const avg = (field) => {
+    const r = db.prepare(`SELECT AVG(${field}) as a, COUNT(${field}) as c FROM ratings WHERE ${field} IS NOT NULL`).get();
+    return { avg: r.a ? Math.round(r.a * 10) / 10 : null, count: r.c };
+  };
+  res.json({
+    punctuality: avg('punctuality'),
+    cleanliness: avg('cleanliness'),
+    driver_behavior: avg('driver_behavior'),
+    difficultyYesCount: db.prepare('SELECT COUNT(*) c FROM ratings WHERE had_difficulty=1').get().c,
+    difficultyTotalAnswered: db.prepare('SELECT COUNT(*) c FROM ratings WHERE had_difficulty IS NOT NULL').get().c,
+    total: rows.length,
+    recent: rows.slice(0, 50),
+  });
+});
+
+/* ============================ الإعدادات (أرقام الهواتف) ============================ */
+router.get('/settings', (req, res) => {
+  const rows = db.prepare('SELECT * FROM settings').all();
+  const map = {};
+  rows.forEach((r) => { map[r.key] = r.value; });
+  res.json(map);
+});
+
+router.put('/settings', canManage, (req, res) => {
+  const { phone_security, phone_maintenance, phone_transport } = req.body;
+  const upsert = db.prepare(
+    'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value'
+  );
+  if (phone_security !== undefined) upsert.run('phone_security', phone_security);
+  if (phone_maintenance !== undefined) upsert.run('phone_maintenance', phone_maintenance);
+  if (phone_transport !== undefined) upsert.run('phone_transport', phone_transport);
+  res.json({ ok: true });
+});
 module.exports = router;
