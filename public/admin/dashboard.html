@@ -15,6 +15,7 @@
       <button class="nav-item" data-tab="vehicles" data-i18n="admin.nav.vehicles">المركبات</button>
       <button class="nav-item" data-tab="stations" data-i18n="admin.nav.stations">المحطات</button>
       <button class="nav-item" data-tab="buildings">المباني</button>
+      <button class="nav-item" data-tab="ratings">التقييمات والإعدادات</button>
       <button class="nav-item" data-tab="routes" data-i18n="admin.nav.routes">المسارات</button>
       <button class="nav-item" data-tab="drivers" data-i18n="admin.nav.drivers">السائقون</button>
       <button class="nav-item" data-tab="alerts" data-i18n="admin.nav.alerts">التنبيهات</button>
@@ -67,6 +68,14 @@
         </div>
         <div id="form-building" class="form-panel hidden"></div>
         <div id="table-buildings"></div>
+      </section>
+      <section id="tab-ratings" class="tab">
+        <div class="tab-header"><h2>التقييمات والإعدادات</h2></div>
+        <div id="ratings-summary" class="stats-grid" style="margin-bottom:24px"></div>
+        <h3>آخر الملاحظات النصية</h3>
+        <div id="table-ratings-notes"></div>
+        <h3 style="margin-top:30px">أرقام هواتف البلاغات (شاشة اللمس)</h3>
+        <div id="form-settings-phones" class="form-panel"></div>
       </section>
       <section id="tab-routes" class="tab">
         <div class="tab-header">
