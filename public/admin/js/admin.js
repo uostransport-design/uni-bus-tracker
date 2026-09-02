@@ -62,7 +62,7 @@ document.querySelectorAll('.nav-item').forEach((btn) => {
 function loadTab(tab) {
   ({ overview: loadOverview, vehicles: loadVehicles, stations: loadStations, routes: loadRoutes,
      drivers: loadDrivers, alerts: loadAlerts, announcements: loadAnnouncements, incidents: loadIncidents,
-     reports: loadReports, users: loadUsers, audit: loadAudit, buildings: loadBuildings }[tab] || (() => {}))();
+     reports: loadReports, users: loadUsers, audit: loadAudit, buildings: loadBuildings, ratings: loadRatingsTab }[tab] || (() => {}))();
 }
 window.closeForm = (name) => document.getElementById('form-' + name).classList.add('hidden');
 
@@ -501,4 +501,44 @@ async function submitBuilding(e, id) {
   } catch (err) { alert(err.message); }
 }
 window.deleteBuilding = async (id) => { if (!confirm('حذف هذا المبنى؟')) return; await api('/buildings/' + id, { method: 'DELETE' }); loadBuildings(); };
+/* ---------------- التقييمات والإعدادات ---------------- */
+async function loadRatingsTab() {
+  const data = await api('/ratings');
+  const settings = await api('/settings');
+
+  const fmtAvg = (obj) => obj.avg != null ? `${obj.avg} / 5` : '—';
+  document.getElementById('ratings-summary').innerHTML = `
+    <div class="stat-card taupe"><div class="num">${data.total}</div><div class="label">إجمالي التقييمات</div></div>
+    <div class="stat-card green"><div class="num">${fmtAvg(data.punctuality)}</div><div class="label">متوسط الالتزام بالمواعيد (${data.punctuality.count})</div></div>
+    <div class="stat-card green"><div class="num">${fmtAvg(data.cleanliness)}</div><div class="label">متوسط النظافة (${data.cleanliness.count})</div></div>
+    <div class="stat-card green"><div class="num">${fmtAvg(data.driver_behavior)}</div><div class="label">متوسط تعامل السائق (${data.driver_behavior.count})</div></div>
+    <div class="stat-card amber"><div class="num">${data.difficultyYesCount} / ${data.difficultyTotalAnswered}</div><div class="label">واجهوا صعوبة بالاستخدام</div></div>
+  `;
+
+  const notesRows = data.recent.filter((r) => r.note && r.note.trim());
+  const notesEl = document.getElementById('table-ratings-notes');
+  notesEl.innerHTML = notesRows.length
+    ? `<table><thead><tr><th>الملاحظة</th><th>الالتزام</th><th>النظافة</th><th>السائق</th><th>التاريخ</th></tr></thead><tbody>
+        ${notesRows.map((r) => `<tr>
+          <td>${r.note}</td><td>${r.punctuality ?? '—'}</td><td>${r.cleanliness ?? '—'}</td><td>${r.driver_behavior ?? '—'}</td>
+          <td>${new Date(r.created_at).toLocaleString('ar-EG')}</td>
+        </tr>`).join('')}</tbody></table>`
+    : '<div class="empty">لا توجد ملاحظات نصية بعد</div>';
+
+  document.getElementById('form-settings-phones').innerHTML = `
+    <form id="settings-phones-form"><div class="form-grid">
+      <div><label>رقم هاتف قسم الأمن (طوارئ)</label><input name="phone_security" value="${settings.phone_security || ''}" required /></div>
+      <div><label>رقم هاتف قسم الصيانة</label><input name="phone_maintenance" value="${settings.phone_maintenance || ''}" required /></div>
+      <div><label>رقم هاتف قيّم المواصلات</label><input name="phone_transport" value="${settings.phone_transport || ''}" required /></div>
+    </div><div class="form-actions"><button type="submit">حفظ الأرقام</button></div></form>`;
+
+  document.getElementById('settings-phones-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = Object.fromEntries(new FormData(e.target).entries());
+    try {
+      await api('/settings', { method: 'PUT', body: JSON.stringify(body) });
+      alert('تم حفظ الأرقام بنجاح');
+    } catch (err) { alert(err.message); }
+  });
+}
 loadOverview();
