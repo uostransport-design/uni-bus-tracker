@@ -424,10 +424,11 @@ document.getElementById('close-btn').addEventListener('click', showIdle);
 document.getElementById('back-btn').addEventListener('click', showDestinations);
 
 /* ---------------- العودة التلقائية للحالة الافتراضية بعد 20 ثانية من عدم اللمس ---------------- */
-let idleTimer;
-function resetIdleTimer() { clearTimeout(idleTimer); idleTimer = setTimeout(showIdle, 20000); }
-document.addEventListener('click', resetIdleTimer);
-resetIdleTimer();
+/* ---------------- الرجوع التلقائي للحالة الافتراضية — معطّل حاليًا بناءً على الطلب ---------------- */
+// let idleTimer;
+// function resetIdleTimer() { clearTimeout(idleTimer); idleTimer = setTimeout(showIdle, 20000); }
+// document.addEventListener('click', resetIdleTimer);
+// resetIdleTimer();
 
 /* ---------------- تحديث تلقائي كل 15 ثانية ---------------- */
 setInterval(() => {
