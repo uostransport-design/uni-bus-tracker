@@ -100,11 +100,17 @@ function renderDestinations() {
     grid.innerHTML = `<div class="dest-empty">${lang === 'ar' ? 'لا توجد مبانٍ مسجّلة بعد' : 'No buildings registered yet'}</div>`;
     return;
   }
-  grid.innerHTML = buildingsCache.map((b) => `
+  grid.innerHTML = buildingsCache.map((b) => {
+    const collegeIconUrl = getBuildingIconUrl(b.name_en);
+    const iconHtml = collegeIconUrl
+      ? `<img src="${collegeIconUrl}" style="width:44px;height:44px;object-fit:contain;margin-bottom:12px" />`
+      : `<div class="dest-icon" style="color:${b.color || '#2eb386'}">${getIconSvg(b.icon)}</div>`;
+    return `
     <div class="dest-card" data-building-id="${b.id}" style="border-color:${b.color || '#2eb386'}33">
-      <div class="dest-icon" style="color:${b.color || '#2eb386'}">${b.icon || '🏛️'}</div>
+      ${iconHtml}
       <h3>${lang === 'ar' ? b.name_ar : b.name_en}</h3>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   grid.querySelectorAll('.dest-card').forEach((card) => {
     card.addEventListener('click', () => {
       const id = Number(card.dataset.buildingId);
@@ -114,20 +120,33 @@ function renderDestinations() {
   });
 }
 
-// مكتبة الأيقونات الخطية (مرتبطة برموز الإيموجي المحفوظة بلوحة الإدارة)
-const ICON_SVGS = {
-  '🏛️': '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M4 21h16M5 21V10M19 21V10M3 10l9-6 9 6M7 10v7M11 10v7M13 10v7M17 10v7"/></svg>',
-  '🏗️': '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
-  '🩺': '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M6 3v6a4 4 0 0 0 8 0V3M6 3H4M14 3h2M18 9a3 3 0 1 1-6 0"/><circle cx="19" cy="15" r="2.5"/><path d="M10 13v3a5 5 0 0 0 5 5"/></svg>',
-  '📚': '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
-  '🏠': '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>',
-  '🏟️': '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M4 12h16M8 5.5 16 18.5M16 5.5 8 18.5"/></svg>',
-  '🍽️': '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M7 2v8M4 2v5a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V2M7 11v11M17 2c-2 0-3 2-3 5s1 4 3 4 3-1 3-4-1-5-3-5zM17 11v11"/></svg>',
-  '🅿️': '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>',
-  '🚪': '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M4 21h16M6 21V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v17M13 4l5 1v16"/></svg>',
-  '🕌': '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2v3M9 8a3 3 0 0 1 6 0c0 2-3 3-3 3s-3-1-3-3z"/><path d="M4 21v-6a8 8 0 0 1 16 0v6"/><path d="M4 21h16M9 21v-5a3 3 0 0 1 6 0v5"/></svg>',
+// أيقونة القبة الرسمية الموحّدة (مستخرجة من دليل الهوية البصرية) — تُستخدم لكل المباني اللي ما لها أيقونة كلية مخصصة
+const DOME_SVG = '<svg viewBox="0 0 658 573" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0,573) scale(0.1,-0.1)" fill="currentColor"><path d="M3251 5299 l-43 -291 26 -27 c33 -34 33 -61 1 -91 -32 -30 -34 -84 -3 -117 12 -13 20 -24 17 -26 -2 -2 -86 -66 -187 -142 -100 -76 -181 -139 -179 -141 2 -2 48 8 103 22 78 21 131 27 256 31 171 6 272 -4 399 -41 43 -13 76 -19 73 -14 -3 4 -78 63 -167 129 -89 67 -172 131 -185 142 l-22 21 20 21 c29 31 27 85 -5 115 -32 30 -32 57 1 91 l27 28 -43 288 c-23 158 -43 289 -44 290 -2 2 -22 -128 -45 -288z M2100 4003 c-144 -88 -308 -219 -489 -388 -72 -68 -307 -335 -412 -470 -155 -198 -304 -412 -469 -670 l-83 -129 7 -111 c8 -119 40 -324 60 -382 l12 -36 34 44 c74 94 229 279 322 383 82 90 98 114 98 141 0 53 37 253 65 350 132 461 449 926 845 1238 119 94 121 99 10 30z M4410 4047 c0 -2 37 -32 83 -68 275 -213 542 -540 703 -860 102 -203 180 -451 204 -644 17 -131 16 -129 69 -187 75 -82 238 -273 320 -376 41 -50 75 -92 77 -92 15 0 62 279 70 420 l7 106 -63 100 c-426 671 -823 1142 -1201 1427 -109 83 -269 186 -269 174z M4202 3944 c194 -197 300 -374 379 -631 67 -220 99 -532 81 -806 l-10 -158 46 -42 c73 -65 352 -345 420 -422 l61 -69 65 134 c35 74 85 193 111 265 46 129 47 130 29 160 -50 85 -314 495 -437 679 -319 475 -551 754 -777 937 -61 50 -59 47 32 -47z M2415 3989 c-269 -217 -606 -658 -1088 -1423 l-138 -218 17 -52 c29 -90 91 -239 149 -362 l56 -119 62 70 c72 82 339 351 414 417 l52 45 -10 159 c-26 414 46 811 196 1089 67 123 139 220 248 333 55 56 98 102 96 102 -2 -1 -26 -19 -54 -41z M3286 3925 c-35 -500 -151 -919 -397 -1432 -59 -125 -67 -149 -56 -162 59 -72 302 -344 373 -420 l89 -94 62 64 c94 99 383 421 401 448 15 22 14 26 -10 70 -15 25 -54 107 -88 181 -211 460 -312 834 -351 1295 -6 71 -12 135 -13 140 -2 6 -6 -35 -10 -90z M2813 3933 c-101 -158 -170 -286 -350 -653 -295 -601 -364 -731 -461 -869 l-45 -64 31 -61 c77 -149 283 -466 302 -466 4 0 29 24 55 53 43 47 214 225 387 402 l68 71 -34 134 c-45 178 -74 352 -88 534 -25 319 36 673 156 921 19 38 33 71 32 73 -2 1 -26 -32 -53 -75z M3759 3930 c184 -402 208 -890 71 -1428 l-40 -155 102 -106 c57 -58 153 -158 214 -221 62 -63 130 -135 153 -160 l41 -45 20 25 c76 94 310 471 310 500 0 5 -36 64 -81 132 -56 86 -167 297 -369 703 -248 497 -360 705 -442 817 -10 12 0 -15 21 -62z M4725 3986 c325 -191 537 -367 738 -608 242 -293 440 -691 487 -984 5 -31 16 -64 23 -73 27 -31 211 -297 274 -395 l63 -100 0 75 c0 229 -84 531 -222 799 -253 492 -747 970 -1311 1269 -84 44 -117 55 -52 17z M1773 3947 c-328 -184 -565 -366 -821 -632 -404 -418 -646 -916 -669 -1374 l-5 -116 92 140 c51 77 131 194 178 259 73 102 87 128 94 175 22 141 110 384 200 551 224 417 557 765 950 992 48 28 88 52 88 54 0 9 -19 0 -107 -49z M170 1460 c-15 -15 -20 -33 -20 -70 l0 -50 3145 0 3145 0 0 50 c0 37 -5 55 -20 70 -20 20 -33 20 -3125 20 -3092 0 -3105 0 -3125 -20z M340 995 c0 -2 7 -30 15 -62 23 -89 44 -315 51 -565 l7 -228 174 0 173 0 0 93 c1 255 31 619 60 717 5 19 10 38 10 42 0 5 -110 8 -245 8 -135 0 -245 -2 -245 -5z M1175 978 c53 -164 74 -327 82 -615 l6 -223 244 0 243 0 0 78 c0 268 37 607 79 727 l19 55 -340 0 -340 0 7 -22z M2205 951 c63 -125 95 -310 102 -593 l6 -218 342 0 342 0 6 213 c7 281 41 477 102 598 l25 49 -475 0 -475 0 25 -49z M3485 950 c63 -125 105 -384 105 -652 l0 -158 344 0 343 0 6 213 c7 281 41 477 102 598 l25 49 -475 0 -475 0 25 -50z M4750 996 c0 -2 11 -46 25 -98 33 -124 53 -305 61 -553 l7 -205 244 0 243 0 0 128 c0 251 30 525 71 657 10 33 19 63 19 68 0 4 -151 7 -335 7 -184 0 -335 -2 -335 -4z M5764 985 c11 -29 36 -182 46 -283 5 -56 13 -206 17 -332 l6 -230 172 0 172 0 7 218 c10 308 27 480 61 615 l7 27 -247 0 c-215 0 -246 -2 -241 -15z"/></g></svg>';
+function getIconSvg(key) { return DOME_SVG; }
+
+// خريطة ربط الأيقونات الرسمية للكليات (مستخرجة من دليل الهوية البصرية) بالمباني حسب اسمها الإنجليزي
+const COLLEGE_ICON_MAP = {
+  'college of medicine': 'medicine',
+  'college of dental medicine': 'dental_medicine',
+  'college of pharmacy and health sciences': 'pharmacy',
+  'college of pharmacy': 'pharmacy',
+  'college of sharia and islamic studies': 'sharia_islamic',
+  'college of law': 'law',
+  'college of arts, humanities and social sciences': 'arts_humanities',
+  'college of computing and informatics': 'computing_informatics',
+  'college of business administration': 'business_admin',
+  'college of communication': 'communication',
+  'college of engineering': 'engineering',
 };
-function getIconSvg(key) { return ICON_SVGS[key] || ICON_SVGS['🏛️']; }
+function getBuildingIconUrl(nameEn) {
+  if (!nameEn) return null;
+  const key = nameEn.trim().toLowerCase();
+  for (const partial in COLLEGE_ICON_MAP) {
+    if (key.includes(partial)) return `/assets/college-icons/${COLLEGE_ICON_MAP[partial]}.png`;
+  }
+  return null;
+}
+
 const STATION_PIN_SVG = '<svg viewBox="0 0 24 24" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
 
 /* ---------------- الخريطة المصغّرة ---------------- */
@@ -193,11 +212,16 @@ function updateMiniMap(originStation, destStation, relevantRoute, destBuilding, 
       focusBounds.push([destStation.lat, destStation.lng]);
     }
 
-    // المبنى المختار نفسه (الوجهة) — بأيقونته الحقيقية المختارة بلوحة الإدارة، بارز وأكبر من باقي العلامات
+    // المبنى المختار نفسه (الوجهة) — بأيقونته الرسمية إن وُجدت، وإلا القبة العامة، بارز وأكبر من باقي العلامات
     if (destBuilding) {
+      const collegeIconUrl = getBuildingIconUrl(destBuilding.name_en);
+      const innerHtml = collegeIconUrl
+        ? `<img src="${collegeIconUrl}" style="width:100%;height:100%;object-fit:contain" />`
+        : getIconSvg(destBuilding.icon);
+      const markerBg = collegeIconUrl ? 'white' : (destBuilding.color || '#2eb386');
       const buildingIcon = L.divIcon({
         className: '',
-        html: `<div style="background:${destBuilding.color || '#2eb386'};width:44px;height:44px;border-radius:50%;border:4px solid white;box-shadow:0 3px 10px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:9px">${getIconSvg(destBuilding.icon)}</div>`,
+        html: `<div style="background:${markerBg};width:44px;height:44px;border-radius:50%;border:4px solid white;box-shadow:0 3px 10px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:8px">${innerHtml}</div>`,
         iconSize: [44, 44], iconAnchor: [22, 22],
       });
       miniMapMarkers.push(L.marker([destBuilding.lat, destBuilding.lng], { icon: buildingIcon }).addTo(map));
@@ -416,3 +440,6 @@ setInterval(() => {
     loadArrivals(currentDestId, currentDestName);
   }
 }, 15000);
+
+/* ---------------- التشغيل ---------------- */
+checkSetup();
