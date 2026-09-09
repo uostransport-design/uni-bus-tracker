@@ -139,12 +139,7 @@ const COLLEGE_ICON_MAP = {
   'college of engineering': 'engineering',
 };
 function getBuildingIconUrl(nameEn) {
-  if (!nameEn) return null;
-  const key = nameEn.trim().toLowerCase();
-  for (const partial in COLLEGE_ICON_MAP) {
-    if (key.includes(partial)) return `/assets/college-icons/${COLLEGE_ICON_MAP[partial]}.png`;
-  }
-  return null;
+  return null; // تم تعطيل الأيقونات المخصصة مؤقتًا — كل المباني تستخدم القبة العامة الموحّدة
 }
 
 const STATION_PIN_SVG = '<svg viewBox="0 0 24 24" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
