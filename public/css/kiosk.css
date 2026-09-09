@@ -47,6 +47,7 @@ body { font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif; background: 
 }
 .dest-card:active { transform: scale(.96); border-color: var(--brand); }
 .dest-card .dest-icon { font-size: 40px; margin-bottom: 12px; color: var(--ink); }
+.dest-card .dest-icon svg { width: 44px; height: 44px; display: block; margin: 0 auto; }
 .dest-card h3 { font-size: 16.5px; font-weight: 700; color: var(--ink); }
 .dest-empty { grid-column: 1/-1; text-align: center; color: #999; padding: 60px; font-size: 16px; }
 
