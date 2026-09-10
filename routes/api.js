@@ -181,7 +181,16 @@ router.get('/stations/:originStationId/to-building/:destId/arrivals', (req, res)
   if (!originStation || !dest) return res.status(404).json({ error: 'بيانات غير صالحة' });
 
   const stations = db.prepare('SELECT * FROM stations').all();
-  const { station: destStation, distanceMeters } = nearestStationTo(dest, stations);
+  let destStation, distanceMeters;
+  if (dest.station_id) {
+    destStation = stations.find((s) => s.id === dest.station_id);
+    if (destStation) distanceMeters = Math.round(haversineMeters(dest.lat, dest.lng, destStation.lat, destStation.lng));
+  }
+  if (!destStation) {
+    const nearest = nearestStationTo(dest, stations);
+    destStation = nearest.station;
+    distanceMeters = nearest.distanceMeters;
+  }
 
   const validRoutes = db.prepare(`
     SELECT r.* FROM routes r
