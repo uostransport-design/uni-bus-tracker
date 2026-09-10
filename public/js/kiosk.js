@@ -162,21 +162,7 @@ function updateMiniMap(originStation, destStation, relevantRoute, destBuilding, 
     // مناطق التكبير: بس نقطة الانطلاق والوجهة ومسار الرحلة (مو كل الحافلات، حتى ما يتوسّع الزوم بلا داعي)
     const focusBounds = [];
 
-    // كل المسارات (نفس شكل الصفحة الرئيسية بالكامل)
-    allRoutesCache.forEach((route) => {
-      if (Array.isArray(route.geometry) && route.geometry.length > 1) {
-        const validPoints = route.geometry.filter((p) =>
-          Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number' && !isNaN(p[0]) && !isNaN(p[1])
-        );
-        if (validPoints.length > 1) {
-          const isRelevant = relevantRoute && route.id === relevantRoute.id;
-          const line = L.polyline(validPoints, { color: route.color || '#2563eb', weight: isRelevant ? 5 : 3, opacity: isRelevant ? 0.85 : 0.35 }).addTo(map);
-          miniMapMarkers.push(line);
-          if (isRelevant) validPoints.forEach((p) => focusBounds.push(p));
-        }
-      }
-    });
-
+  
     // بس الحافلات اللي فعليًا توصل لهذي الوجهة (مو كل حافلات الجامعة) — تفاديًا لتشتيت الطالبة
     relevantBuses.forEach((b) => {
       if (b.current_lat == null || b.current_lng == null) return;
