@@ -1,4 +1,5 @@
 // display.js — يشغّل شاشة العرض العامة: خريطة حية + قائمة حافلات + شريط إعلانات + دعم صفحات المحطات
+// + لوحة تصفية المسارات (إظهار/إخفاء كل مسار وحافلاته من الخريطة)
 
 applyLang();
 
@@ -12,8 +13,16 @@ let routesCache = [];
 let stationsCache = [];
 let busesCache = [];
 const busMarkers = {};
+const routeLines = {};
+const routeVisibility = {}; // { [routeId]: true/false } — true افتراضيًا لكل مسار
 
 function busNumber(name) { const m = name.match(/(\d+)/); return m ? m[1] : '•'; }
+
+function isRouteVisible(bus) {
+  const rid = bus && bus.route ? bus.route.id : null;
+  if (rid == null) return true; // حافلة بدون مسار محدد، تظهر دايمًا
+  return routeVisibility[rid] !== false;
+}
 
 const BUS_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="white"><path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM6 11V6h12v5H6z"/></svg>';
 
@@ -42,8 +51,56 @@ async function loadRoutes() {
   routesCache = await (await fetch('/api/routes')).json();
   routesCache.forEach((route) => {
     const latlngs = (route.geometry && route.geometry.length > 1) ? route.geometry : route.stations.map((s) => [s.lat, s.lng]);
-    if (latlngs.length > 1) L.polyline(latlngs, { color: route.color, weight: 4, opacity: 0.75 }).addTo(map);
+    if (!(route.id in routeVisibility)) routeVisibility[route.id] = true;
+    if (latlngs.length > 1) {
+      const line = L.polyline(latlngs, { color: route.color, weight: 4, opacity: 0.75 });
+      if (routeVisibility[route.id]) line.addTo(map);
+      routeLines[route.id] = line;
+    }
   });
+  buildRouteFilterPanel();
+}
+
+/* ---------------- لوحة تصفية المسارات (إظهار/إخفاء) ---------------- */
+function buildRouteFilterPanel() {
+  let panel = document.getElementById('route-filter-panel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'route-filter-panel';
+    panel.style.cssText = 'position:absolute; bottom:20px; left:12px; z-index:1000; background:white; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,.18); padding:12px 16px; max-height:50vh; overflow-y:auto; font-size:13px; min-width:180px;';
+    document.body.appendChild(panel);
+  }
+  const lang = getLang();
+  panel.innerHTML = `<div style="font-weight:800; margin-bottom:10px; color:#0a0a0a;">${lang === 'ar' ? '🛣️ المسارات' : '🛣️ Routes'}</div>` +
+    routesCache.map((r) => `
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer; color:#333;">
+        <input type="checkbox" data-route-id="${r.id}" ${routeVisibility[r.id] !== false ? 'checked' : ''} style="width:16px; height:16px; cursor:pointer;" />
+        <span style="width:12px; height:12px; border-radius:50%; background:${r.color}; display:inline-block; flex-shrink:0;"></span>
+        <span>${lang === 'ar' ? r.name_ar : r.name_en}</span>
+      </label>`).join('');
+  panel.querySelectorAll('input[type=checkbox]').forEach((cb) => {
+    cb.addEventListener('change', () => toggleRouteVisibility(Number(cb.dataset.routeId), cb.checked));
+  });
+}
+
+function toggleRouteVisibility(routeId, visible) {
+  routeVisibility[routeId] = visible;
+
+  const line = routeLines[routeId];
+  if (line) { if (visible) line.addTo(map); else map.removeLayer(line); }
+
+  busesCache.forEach((b) => {
+    const rid = b.route ? b.route.id : null;
+    if (rid !== routeId) return;
+    const marker = busMarkers[b.id];
+    if (visible) {
+      if (marker) { marker.addTo(map); }
+      else if (b.current_lat && b.current_lng) { busMarkers[b.id] = L.marker([b.current_lat, b.current_lng], { icon: busIcon(b) }).addTo(map); }
+    } else if (marker) {
+      map.removeLayer(marker);
+    }
+  });
+  renderBusList();
 }
 
 async function loadStations() {
@@ -69,7 +126,7 @@ function populateStationFilter() {
 async function loadBuses() {
   busesCache = await (await fetch('/api/buses')).json();
   busesCache.forEach((b) => {
-    if (b.current_lat && b.current_lng) {
+    if (b.current_lat && b.current_lng && isRouteVisible(b)) {
       busMarkers[b.id] = L.marker([b.current_lat, b.current_lng], { icon: busIcon(b) }).addTo(map);
     }
   });
@@ -90,7 +147,7 @@ function formatEta(seconds) {
 
 function renderBusList() {
   const lang = t().lang;
-  let list = busesCache.filter((b) => b.status !== 'out_of_service');
+  let list = busesCache.filter((b) => b.status !== 'out_of_service' && isRouteVisible(b));
   if (activeStationId) list = list.filter((b) => b.nextStation && b.nextStation.id === activeStationId);
   list.sort((a, b) => (a._etaSeconds ?? 1e9) - (b._etaSeconds ?? 1e9));
 
@@ -138,6 +195,7 @@ document.addEventListener('langchange', () => {
   populateStationFilter();
   renderBusList();
   loadTicker();
+  buildRouteFilterPanel();
   Object.entries(busMarkers).forEach(([id, marker]) => {
     const bus = busesCache.find((b) => b.id == id);
     if (bus) marker.setIcon(busIcon(bus));
@@ -155,11 +213,14 @@ socket.on('bus:update', (data) => {
       bus.nextStation = { id: data.eta.nextStationId, name_ar: data.eta.nextStationNameAr, name_en: data.eta.nextStationNameEn };
     }
   }
+  const visible = isRouteVisible(bus || {});
   if (!busMarkers[data.busId]) {
-    busMarkers[data.busId] = L.marker([data.lat, data.lng], { icon: busIcon(bus || { name: '', status: data.status }) }).addTo(map);
+    if (visible) busMarkers[data.busId] = L.marker([data.lat, data.lng], { icon: busIcon(bus || { name: '', status: data.status }) }).addTo(map);
   } else {
     busMarkers[data.busId].setLatLng([data.lat, data.lng]);
     busMarkers[data.busId].setIcon(busIcon(bus || { name: '', status: data.status }));
+    if (!visible) map.removeLayer(busMarkers[data.busId]);
+    else if (!map.hasLayer(busMarkers[data.busId])) busMarkers[data.busId].addTo(map);
   }
   renderBusList();
 });
