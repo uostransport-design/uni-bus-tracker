@@ -24,7 +24,8 @@ let miniMap = null;
 let miniMapMarkers = [];
 
 function busNumber(name) { const m = (name || '').match(/(\d+)/); return m ? m[1] : '•'; }
-function getHomeStationId() { return localStorage.getItem(HOME_STATION_KEY); }
+function getHomeStationId() { return testOverrideStationId || localStorage.getItem(HOME_STATION_KEY); }
+let testOverrideStationId = null;
 
 /* ---------------- إعداد الشاشة (مرة واحدة) ---------------- */
 async function checkSetup() {
@@ -76,7 +77,15 @@ function showIdle() {
   document.getElementById('idle-view').style.display = 'flex';
   document.getElementById('destinations-view').classList.remove('active');
   document.getElementById('arrivals-view').classList.remove('active');
+  hideTestBanner();
 
+  if (testOverrideStationId) {
+    const st = allStationsForTest.find((s) => s.id == testOverrideStationId);
+    if (st) {
+      document.getElementById('idle-station-label').textContent = (getLang() === 'ar' ? '🧪 وضع اختبار — أنتِ الآن عند: ' : '🧪 Test mode — You are at: ') + (getLang() === 'ar' ? st.name_ar : st.name_en);
+      return;
+    }
+  }
   const nameJson = localStorage.getItem(HOME_STATION_NAME_KEY);
   if (nameJson) {
     const name = JSON.parse(nameJson);
@@ -162,7 +171,8 @@ function updateMiniMap(originStation, destStation, relevantRoute, destBuilding, 
     // مناطق التكبير: بس نقطة الانطلاق والوجهة ومسار الرحلة (مو كل الحافلات، حتى ما يتوسّع الزوم بلا داعي)
     const focusBounds = [];
 
-  
+    // ملاحظة: تم إلغاء رسم خطوط المسارات على الخريطة المصغّرة بناءً على الطلب — تظهر فقط المباني والمحطات والحافلة
+
     // بس الحافلات اللي فعليًا توصل لهذي الوجهة (مو كل حافلات الجامعة) — تفاديًا لتشتيت الطالبة
     relevantBuses.forEach((b) => {
       if (b.current_lat == null || b.current_lng == null) return;
@@ -410,7 +420,6 @@ document.getElementById('close-btn').addEventListener('click', showIdle);
 document.getElementById('back-btn').addEventListener('click', showDestinations);
 
 /* ---------------- العودة التلقائية للحالة الافتراضية بعد 20 ثانية من عدم اللمس ---------------- */
-/* ---------------- الرجوع التلقائي للحالة الافتراضية — معطّل حاليًا بناءً على الطلب ---------------- */
 // let idleTimer;
 // function resetIdleTimer() { clearTimeout(idleTimer); idleTimer = setTimeout(showIdle, 20000); }
 // document.addEventListener('click', resetIdleTimer);
@@ -422,6 +431,83 @@ setInterval(() => {
     loadArrivals(currentDestId, currentDestName);
   }
 }, 15000);
+
+/* ---------------- 🧪 اختبار محطة (ميزة مؤقتة للتأكد من عمل كل المحطات صح) ---------------- */
+let allStationsForTest = [];
+
+function injectTestStationUI() {
+  // زر الاختبار بالحالة الافتراضية
+  const idleView = document.getElementById('idle-view');
+  const testBtn = document.createElement('button');
+  testBtn.id = 'test-station-btn';
+  testBtn.textContent = '🧪 اختبار محطة (مؤقت)';
+  testBtn.style.cssText = 'position:absolute; top:24px; left:50%; transform:translateX(-50%); background:#fef3c7; color:#92400e; border:1.5px solid #f59e0b; border-radius:20px; padding:8px 18px; font-size:13px; font-weight:700; cursor:pointer; z-index:50;';
+  testBtn.addEventListener('click', (e) => { e.stopPropagation(); openTestStationPicker(); });
+  idleView.appendChild(testBtn);
+
+  // شاشة اختيار محطة الاختبار
+  const overlay = document.createElement('div');
+  overlay.id = 'test-station-overlay';
+  overlay.style.cssText = 'position:fixed; inset:0; background:#ffffff; z-index:200; display:none; flex-direction:column;';
+  overlay.innerHTML = `
+    <div style="padding:24px 40px; background:#fef3c7; border-bottom:2px solid #f59e0b; display:flex; justify-content:space-between; align-items:center;">
+      <div><div style="font-size:20px; font-weight:800; color:#92400e;">🧪 اختبار محطة — اختاري أي محطة لتجربتها</div><div style="font-size:13px; color:#92400e; margin-top:4px;">هذا وضع مؤقت للاختبار فقط، ما يغيّر إعداد الشاشة الحقيقي</div></div>
+      <button id="close-test-picker" style="width:44px; height:44px; border-radius:50%; background:white; border:none; font-size:20px; cursor:pointer;">✕</button>
+    </div>
+    <div id="test-station-grid" style="flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:16px; padding:30px 40px; overflow-y:auto; align-content:start;"></div>
+  `;
+  document.body.appendChild(overlay);
+
+  document.getElementById('close-test-picker').addEventListener('click', () => { overlay.style.display = 'none'; });
+}
+
+async function openTestStationPicker() {
+  if (!allStationsForTest.length) allStationsForTest = await (await fetch('/api/stations')).json();
+  const lang = getLang();
+  const grid = document.getElementById('test-station-grid');
+  grid.innerHTML = allStationsForTest.map((s) => `
+    <div class="test-station-card" data-station-id="${s.id}" style="background:white; border:2px solid #eef2ef; border-radius:14px; padding:18px 10px; text-align:center; cursor:pointer;">
+      <div style="font-size:26px; margin-bottom:8px;">📍</div>
+      <div style="font-size:13.5px; font-weight:700; color:#0a0a0a;">${lang === 'ar' ? s.name_ar : s.name_en}</div>
+      <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${s.code || ''}</div>
+    </div>`).join('');
+  grid.querySelectorAll('.test-station-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      testOverrideStationId = card.dataset.stationId;
+      document.getElementById('test-station-overlay').style.display = 'none';
+      showTestBanner();
+      showDestinations();
+    });
+  });
+  document.getElementById('test-station-overlay').style.display = 'flex';
+}
+
+function showTestBanner() {
+  let banner = document.getElementById('test-mode-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'test-mode-banner';
+    banner.style.cssText = 'position:fixed; top:0; inset-inline:0; background:#f59e0b; color:white; text-align:center; padding:8px; font-size:13px; font-weight:700; z-index:300; cursor:pointer;';
+    banner.addEventListener('click', exitTestMode);
+    document.body.appendChild(banner);
+  }
+  const lang = getLang();
+  const st = allStationsForTest.find((s) => s.id == testOverrideStationId);
+  const stName = st ? (lang === 'ar' ? st.name_ar : st.name_en) : '';
+  banner.textContent = `🧪 وضع اختبار: تعملين الآن كأنك بمحطة "${stName}" — اضغطي هنا للخروج من وضع الاختبار`;
+  banner.style.display = 'block';
+}
+function hideTestBanner() {
+  const banner = document.getElementById('test-mode-banner');
+  if (banner) banner.style.display = 'none';
+}
+function exitTestMode() {
+  testOverrideStationId = null;
+  hideTestBanner();
+  showIdle();
+}
+
+injectTestStationUI();
 
 /* ---------------- التشغيل ---------------- */
 checkSetup();
