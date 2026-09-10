@@ -179,7 +179,7 @@ function updateMiniMap(originStation, destStation, relevantRoute, destBuilding, 
         Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number' && !isNaN(p[0]) && !isNaN(p[1])
       );
       if (validPoints.length > 1) {
-        const line = L.polyline(validPoints, { color: relevantRoute.color || '#2563eb', weight: 5, opacity: 0.85 }).addTo(map);
+        const line = L.polyline(validPoints, { color: relevantRoute.color || '#2563eb', weight: 3, opacity: 0.85 }).addTo(map);
         miniMapMarkers.push(line);
         validPoints.forEach((p) => focusBounds.push(p));
       }
