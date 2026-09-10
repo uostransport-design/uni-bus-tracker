@@ -6,7 +6,7 @@ document.getElementById('lang-toggle').addEventListener('click', (e) => {
   setLang(getLang() === 'ar' ? 'en' : 'ar');
 });
 document.addEventListener('langchange', () => {
-  if (document.getElementById('destinations-view').classList.contains('active')) renderDestinations();
+  if (document.getElementById('destinations-view').classList.contains('ctive')) renderDestinations();
   if (document.getElementById('arrivals-view').classList.contains('active') && currentDestId) {
     loadArrivals(currentDestId, currentDestName);
   }
