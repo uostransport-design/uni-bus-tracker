@@ -56,17 +56,14 @@ router.get('/vehicles', (req, res) => {
   res.json(rows);
 });
 
-router.post('/vehicles', canManage, (req, res) => {
-  const { name, plate_number, bus_type, seats, photo_url, route_id, driver_id, device_key, color } = req.body;
-  if (!name || !device_key) return res.status(400).json({ error: 'اسم الحافلة ومفتاح الجهاز مطلوبان' });
-  if (db.prepare('SELECT id FROM buses WHERE device_key=?').get(device_key)) {
-    return res.status(409).json({ error: 'مفتاح الجهاز مستخدم بالفعل' });
+router.post('/buildings', canManage, (req, res) => {
+  const { name_ar, name_en, lat, lng, icon, color, station_id } = req.body;
+  if (!name_ar || !name_en || lat === undefined || lng === undefined) {
+    return res.status(400).json({ error: 'الاسم بالعربية والإنجليزية والإحداثيات مطلوبة' });
   }
-  const info = db.prepare(
-    `INSERT INTO buses (name, plate_number, bus_type, seats, photo_url, route_id, driver_id, device_key, color)
-     VALUES (?,?,?,?,?,?,?,?,?)`
-  ).run(name, plate_number || null, bus_type || 'standard', seats || 40, photo_url || null, route_id || null, driver_id || null, device_key, color || '#2eb386');
-  logAction(req.user, 'create', 'bus', info.lastInsertRowid, { name });
+  const info = db.prepare('INSERT INTO buildings (name_ar, name_en, lat, lng, icon, color, station_id) VALUES (?,?,?,?,?,?,?)')
+    .run(name_ar, name_en, lat, lng, icon || '🏛️', color || '#2eb386', station_id || null);
+  logAction(req.user, 'create', 'building', info.lastInsertRowid, { name_en });
   res.json({ id: info.lastInsertRowid });
 });
 
@@ -84,12 +81,11 @@ router.post('/vehicles', canManage, (req, res) => {
   res.json({ id: info.lastInsertRowid });
 });
 
-router.put('/vehicles/:id', canManage, (req, res) => {
-  const { name, plate_number, bus_type, seats, photo_url, route_id, driver_id, vehicle_status, color } = req.body;
-  db.prepare(
-    `UPDATE buses SET name=?, plate_number=?, bus_type=?, seats=?, photo_url=?, route_id=?, driver_id=?, vehicle_status=?, color=? WHERE id=?`
-  ).run(name, plate_number || null, bus_type || 'standard', seats || 40, photo_url || null, route_id || null, driver_id || null, vehicle_status || 'active', color || '#2eb386', req.params.id);
-  logAction(req.user, 'update', 'bus', req.params.id, req.body);
+router.put('/buildings/:id', canManage, (req, res) => {
+  const { name_ar, name_en, lat, lng, icon, color, station_id } = req.body;
+  db.prepare('UPDATE buildings SET name_ar=?, name_en=?, lat=?, lng=?, icon=?, color=?, station_id=? WHERE id=?')
+    .run(name_ar, name_en, lat, lng, icon || '🏛️', color || '#2eb386', station_id || null, req.params.id);
+  logAction(req.user, 'update', 'building', req.params.id);
   res.json({ ok: true });
 });
 
