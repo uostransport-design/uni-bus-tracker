@@ -250,7 +250,7 @@ async function loadArrivals(destId, destName) {
 
   allRoutesCache = await fetch('/api/routes').then((r) => r.json());
 
-  const relevantRoute = data.buses && data.buses[0] ? data.buses[0].route : null;
+   const relevantRoute = (data.buses && data.buses[0] && data.buses[0].route) || (data.routes && data.routes[0]) || null;
   const destBuilding = buildingsCache.find((b) => b.id === destId);
   updateMiniMap(data.originStation, data.destStation, relevantRoute, destBuilding, data.buses);
 
