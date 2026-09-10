@@ -164,6 +164,9 @@ CREATE TABLE IF NOT EXISTS system_settings (
 try {
   db.exec('ALTER TABLE routes ADD COLUMN geometry TEXT');
 } catch (e) {
+try {
+  db.exec('ALTER TABLE buildings ADD COLUMN station_id INTEGER');
+} catch (e) {}
   // العمود موجود بالفعل — لا حاجة لفعل شيء
 }
    try {
