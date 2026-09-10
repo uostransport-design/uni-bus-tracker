@@ -181,12 +181,13 @@ function updateMiniMap(originStation, destStation, relevantRoute, destBuilding, 
       miniMapMarkers.push(L.marker([b.current_lat, b.current_lng], { icon: busIcon }).addTo(map));
     });
 
-    // محطة الانطلاق (كبينة الانتظار) — دبوس موقف واضح وكبير
+    // محطة الانطلاق (كبينة الانتظار) — تظهر بكبسولة "أنا هنا" واضحة بدل أيقونة محطة عادية
     if (originStation) {
+      const hereLabel = getLang() === 'ar' ? '📍 أنا هنا' : '📍 I am here';
       const originIcon = L.divIcon({
         className: '',
-        html: `<div style="width:38px;height:38px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))"><div style="background:#145c46;width:100%;height:100%;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:3px solid white"><div style="transform:rotate(45deg);width:20px;height:20px">${STATION_PIN_SVG}</div></div></div>`,
-        iconSize: [38, 38], iconAnchor: [19, 38],
+        html: `<div style="background:#145c46; color:white; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:800; white-space:nowrap; box-shadow:0 3px 10px rgba(0,0,0,.4); border:2px solid white;">${hereLabel}</div>`,
+        iconSize: null, iconAnchor: [45, 15],
       });
       miniMapMarkers.push(L.marker([originStation.lat, originStation.lng], { icon: originIcon }).addTo(map));
       focusBounds.push([originStation.lat, originStation.lng]);
