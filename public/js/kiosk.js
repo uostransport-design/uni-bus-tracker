@@ -6,10 +6,11 @@ document.getElementById('lang-toggle').addEventListener('click', (e) => {
   setLang(getLang() === 'ar' ? 'en' : 'ar');
 });
 document.addEventListener('langchange', () => {
-  if (document.getElementById('destinations-view').classList.contains('ctive')) renderDestinations();
+  if (document.getElementById('destinations-view').classList.contains('active')) renderDestinations();
   if (document.getElementById('arrivals-view').classList.contains('active') && currentDestId) {
     loadArrivals(currentDestId, currentDestName);
   }
+  if (testOverrideStationId) showTestBanner();
 });
 
 const HOME_STATION_KEY = 'kiosk_home_station_id';
@@ -98,6 +99,7 @@ async function showDestinations() {
   document.getElementById('idle-view').style.display = 'none';
   document.getElementById('arrivals-view').classList.remove('active');
   document.getElementById('destinations-view').classList.add('active');
+  if (testOverrideStationId) showTestBanner(); else hideTestBanner();
   if (!buildingsCache.length) buildingsCache = await (await fetch('/api/buildings')).json();
   renderDestinations();
 }
@@ -236,6 +238,7 @@ async function loadArrivals(destId, destName) {
   document.getElementById('destinations-view').classList.remove('active');
   document.getElementById('arrivals-view').classList.add('active');
   document.getElementById('arrivals-dest-name').textContent = destName;
+  if (testOverrideStationId) showTestBanner(); else hideTestBanner();
 
   const lang = getLang();
   const homeStationId = getHomeStationId();
@@ -412,7 +415,7 @@ document.getElementById('open-complaint-btn').addEventListener('click', (e) => {
 document.getElementById('close-complaint-btn').addEventListener('click', showIdleFromComplaint);
 
 /* ---------------- الأحداث ---------------- */
-document.getElementById('tap-prompt').addEventListener('click', showDestinations);
+document.getElementById('tap-prompt').addEventListener('click', (e) => { e.stopPropagation(); showDestinations(); });
 document.getElementById('idle-view').addEventListener('click', (e) => {
   const excludedIds = ['lang-toggle', 'settings-btn', 'open-rating-btn', 'open-complaint-btn'];
   if (!excludedIds.includes(e.target.id)) showDestinations();
