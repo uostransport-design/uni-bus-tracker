@@ -173,15 +173,17 @@ function updateMiniMap(originStation, destStation, relevantRoute, destBuilding, 
     // مناطق التكبير: بس نقطة الانطلاق والوجهة ومسار الرحلة (مو كل الحافلات، حتى ما يتوسّع الزوم بلا داعي)
     const focusBounds = [];
 
-    // ملاحظة: تم إلغاء رسم خطوط المسارات على الخريطة المصغّرة بناءً على الطلب — تظهر فقط المباني والمحطات والحافلة
-
-    // بس الحافلات اللي فعليًا توصل لهذي الوجهة (مو كل حافلات الجامعة) — تفاديًا لتشتيت الطالبة
-    relevantBuses.forEach((b) => {
-      if (b.current_lat == null || b.current_lng == null) return;
-      const color = (b.route && b.route.color) || '#2eb386';
-      const busIcon = L.divIcon({ className: '', html: `<div style="background:${color};width:24px;height:24px;border-radius:50%;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:800">🚌</div>`, iconSize: [24, 24] });
-      miniMapMarkers.push(L.marker([b.current_lat, b.current_lng], { icon: busIcon }).addTo(map));
-    });
+        // خط المسار المرتبط برحلتك تحديدًا (من محطتك للمبنى المطلوب) — بس هذا الخط، بدون باقي مسارات الجامعة
+    if (relevantRoute && Array.isArray(relevantRoute.geometry) && relevantRoute.geometry.length > 1) {
+      const validPoints = relevantRoute.geometry.filter((p) =>
+        Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number' && !isNaN(p[0]) && !isNaN(p[1])
+      );
+      if (validPoints.length > 1) {
+        const line = L.polyline(validPoints, { color: relevantRoute.color || '#2563eb', weight: 5, opacity: 0.85 }).addTo(map);
+        miniMapMarkers.push(line);
+        validPoints.forEach((p) => focusBounds.push(p));
+      }
+    }
 
     // محطة الانطلاق (كبينة الانتظار) — تظهر بكبسولة "أنا هنا" واضحة بدل أيقونة محطة عادية
     if (originStation) {
