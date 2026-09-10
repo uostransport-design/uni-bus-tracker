@@ -199,8 +199,11 @@ router.get('/stations/:originStationId/to-building/:destId/arrivals', (req, res)
   `).all(originStation.id, destStation.id);
 
   if (!validRoutes.length) {
-    return res.json({ originStation, destStation, distanceMeters, buses: [], noRouteFound: true });
+    return res.json({ originStation, destStation, distanceMeters, buses: [], routes: [], noRouteFound: true });
   }
+
+  // نرجع بيانات المسارات الصالحة دائمًا (خط السير) حتى لو ما فيه حافلة نشطة عليها حاليًا
+  const routesWithGeometry = validRoutes.map((r) => ({ ...r, geometry: r.geometry ? JSON.parse(r.geometry) : null }));
 
   const routeIds = validRoutes.map((r) => r.id);
   const placeholders = routeIds.map(() => '?').join(',');
@@ -209,15 +212,14 @@ router.get('/stations/:originStationId/to-building/:destId/arrivals', (req, res)
   ).all(...routeIds);
 
   const enriched = candidateBuses.map((b) => {
-    const route = validRoutes.find((r) => r.id === b.route_id);
-    const routeGeometry = route && route.geometry ? JSON.parse(route.geometry) : null;
+    const route = routesWithGeometry.find((r) => r.id === b.route_id);
     const { device_key, ...safe } = b;
     const _etaSeconds = computeEtaAlongRoute(b, b.route_id, destStation.id);
-    return { ...safe, route: route ? { ...route, geometry: routeGeometry } : null, _etaSeconds };
+    return { ...safe, route: route || null, _etaSeconds };
   });
 
   enriched.sort((a, b) => (a._etaSeconds ?? 1e9) - (b._etaSeconds ?? 1e9));
-  res.json({ originStation, destStation, distanceMeters, buses: enriched });
+  res.json({ originStation, destStation, distanceMeters, buses: enriched, routes: routesWithGeometry });
 });
 
 /* ============================ تقييم الخدمة ============================ */
