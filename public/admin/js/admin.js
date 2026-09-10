@@ -450,7 +450,6 @@ async function loadReports() {
     ${arrivals.slice(0, 100).map((ar) => `<tr><td>${ar.bus_name}</td><td>${ar.plate_number || '—'}</td><td>${lang === 'ar' ? (ar.route_ar || '—') : (ar.route_en || '—')}</td><td>${lang === 'ar' ? ar.station_ar : ar.station_en}</td><td>${new Date(ar.arrived_at).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-GB')}</td></tr>`).join('')}</tbody></table>` : `<div class="empty">${a.empty}</div>`;
 }
 
-/* ---------------- التشغيل الأولي ---------------- */
 /* ---------------- المباني (الكليات) ---------------- */
 let buildingsCache = [];
 async function loadBuildings() {
@@ -467,6 +466,7 @@ async function loadBuildings() {
 
 function buildingFormHtml(b = {}) {
   const icons = ['🏛️', '🏗️', '🩺', '📚', '🏠', '🏟️', '🍽️', '🅿️', '🚪', '🕌'];
+  const stationOptions = stationsCache.map((s) => `<option value="${s.id}" ${b.station_id === s.id ? 'selected' : ''}>${s.name_ar} (${s.code || ''})</option>`).join('');
   return `<form id="building-form"><div class="form-grid">
     <div><label>الاسم بالعربية</label><input name="name_ar" value="${b.name_ar || ''}" required /></div>
     <div><label>الاسم بالإنجليزية</label><input name="name_en" value="${b.name_en || ''}" required /></div>
@@ -474,16 +474,21 @@ function buildingFormHtml(b = {}) {
     <div><label>خط الطول (Longitude)</label><input name="lng" type="number" step="0.000001" value="${b.lng || ''}" required /></div>
     <div><label>الأيقونة</label><select name="icon">${icons.map((ic) => `<option value="${ic}" ${b.icon === ic ? 'selected' : ''}>${ic}</option>`).join('')}</select></div>
     <div><label>اللون</label><input name="color" type="color" value="${b.color || '#2eb386'}" /></div>
+    <div><label>المحطة المرتبطة (اختياري — إذا فارغة، يُحسب أقرب محطة تلقائيًا)</label>
+      <select name="station_id"><option value="">— حساب تلقائي —</option>${stationOptions}</select>
+    </div>
   </div><div class="form-actions"><button type="submit">${b.id ? 'حفظ التعديلات' : 'إضافة المبنى'}</button><button type="button" onclick="closeForm('building')">إلغاء</button></div></form>`;
 }
 
-document.getElementById('btn-add-building').addEventListener('click', () => {
+document.getElementById('btn-add-building').addEventListener('click', async () => {
+  if (!stationsCache.length) stationsCache = await api('/stations');
   const panel = document.getElementById('form-building');
   panel.innerHTML = buildingFormHtml();
   panel.classList.remove('hidden');
   panel.querySelector('form').addEventListener('submit', (e) => submitBuilding(e));
 });
-window.editBuilding = (id) => {
+window.editBuilding = async (id) => {
+  if (!stationsCache.length) stationsCache = await api('/stations');
   const b = buildingsCache.find((x) => x.id === id);
   if (!b) return;
   const panel = document.getElementById('form-building');
@@ -501,6 +506,7 @@ async function submitBuilding(e, id) {
   } catch (err) { alert(err.message); }
 }
 window.deleteBuilding = async (id) => { if (!confirm('حذف هذا المبنى؟')) return; await api('/buildings/' + id, { method: 'DELETE' }); loadBuildings(); };
+
 /* ---------------- التقييمات والإعدادات ---------------- */
 async function loadRatingsTab() {
   const data = await api('/ratings');
@@ -541,4 +547,6 @@ async function loadRatingsTab() {
     } catch (err) { alert(err.message); }
   });
 }
+
+/* ---------------- التشغيل الأولي ---------------- */
 loadOverview();
