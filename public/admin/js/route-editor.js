@@ -105,7 +105,11 @@ document.getElementById('clear-btn').addEventListener('click', () => {
 });
 
 document.getElementById('reset-osrm-btn').addEventListener('click', async () => {
-  if (!confirm('الرجوع لحساب المسار تلقائيًا على الطرق (سيُلغي أي رسم يدوي محفوظ)؟')) return;
+  const answer = prompt('⚠️ تحذير: هذا الإجراء سيحذف أي رسم يدوي محفوظ لهذا المسار نهائيًا ولا يمكن التراجع عنه.\n\nاكتبي كلمة "متأكدة" بالضبط للمتابعة:');
+  if (answer !== 'متأكدة') {
+    if (answer !== null) alert('لم تتم العملية — الكلمة المكتوبة غير مطابقة.');
+    return;
+  }
   try {
     await api(`/routes/${routeId}/recompute-geometry`, { method: 'POST' });
     alert('تم إرجاع المسار للحساب التلقائي.');
