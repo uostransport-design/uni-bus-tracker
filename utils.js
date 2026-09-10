@@ -10,10 +10,18 @@ function haversineMeters(lat1, lng1, lat2, lng2) {
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
-
 function estimateEtaSeconds(distanceMeters, speedKmh) {
-  const MIN_SPEED_KMH = 8;
-  const effectiveSpeed = Math.max(speedKmh || 0, MIN_SPEED_KMH);
+  // نتجاهل قراءات السرعة اللحظية غير الواقعية (متوقفة لحظيًا، أو تشويش GPS طبيعي بالجوال)
+  // ونعتمد بدلها على سرعة ثابتة معقولة داخل الحرم الجامعي، حتى يكون الترتيب والوقت مستقرين ومنطقيين دايمًا
+  const MIN_REALISTIC_KMH = 10;
+  const MAX_REALISTIC_KMH = 40;
+  const DEFAULT_CAMPUS_SPEED_KMH = 20;
+
+  let effectiveSpeed = speedKmh || 0;
+  if (effectiveSpeed < MIN_REALISTIC_KMH || effectiveSpeed > MAX_REALISTIC_KMH) {
+    effectiveSpeed = DEFAULT_CAMPUS_SPEED_KMH;
+  }
+
   const speedMs = (effectiveSpeed * 1000) / 3600;
   return Math.round(distanceMeters / speedMs);
 }
