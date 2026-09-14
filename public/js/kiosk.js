@@ -23,7 +23,7 @@ let currentDestId = null;
 let currentDestName = '';
 let miniMap = null;
 let miniMapMarkers = [];
-
+let userInteractedWithMap = false;
 function busNumber(name) { const m = (name || '').match(/(\d+)/); return m ? m[1] : '•'; }
 function getHomeStationId() { return testOverrideStationId || localStorage.getItem(HOME_STATION_KEY); }
 let testOverrideStationId = null;
@@ -225,8 +225,10 @@ function updateMiniMap(originStation, destStation, relevantRoute, destBuilding, 
       focusBounds.push([destBuilding.lat, destBuilding.lng]);
     }
 
-    if (focusBounds.length > 1) map.fitBounds(L.latLngBounds(focusBounds), { padding: [40, 40], maxZoom: 17 });
-    else if (focusBounds.length === 1) map.setView(focusBounds[0], 17);
+        if (!userInteractedWithMap) {
+      if (focusBounds.length > 1) map.fitBounds(L.latLngBounds(focusBounds), { padding: [40, 40], maxZoom: 17 });
+      else if (focusBounds.length === 1) map.setView(focusBounds[0], 17);
+    }
 
     setTimeout(() => map.invalidateSize(), 100);
   } catch (e) {
