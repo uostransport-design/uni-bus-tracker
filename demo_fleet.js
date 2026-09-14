@@ -5,7 +5,7 @@ const db = require('./db');
 
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000/api/gps';
 const TICK_MS = 3000;
-const BUSES_PER_ROUTE = 5;
+const BUSES_PER_ROUTE = 3;
 const HEADWAY_STEP_MINUTES = 5;
 const DEMO_COLORS = ['#2563eb', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0891b2', '#be185d', '#0d9488', '#65a30d', '#7c3aed'];
 
