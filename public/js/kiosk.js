@@ -273,12 +273,14 @@ async function loadArrivals(destId, destName) {
     return;
   }
 
-  el.innerHTML = data.buses.map((b) => {
+  el.innerHTML = data.buses.map((b, index) => {
     const routeColor = (b.route && b.route.color) || '#2eb386';
     const routeName = b.route ? (lang === 'ar' ? b.route.name_ar : b.route.name_en) : '—';
     const etaMinutes = b._etaSeconds == null ? '—' : (b._etaSeconds < 60 ? '<1' : Math.round(b._etaSeconds / 60));
+    const isBest = index === 0 && data.buses.length > 1;
     return `
-      <div class="arrival-card" style="border-inline-start-color:${routeColor}">
+      <div class="arrival-card" style="border-inline-start-color:${routeColor}; ${isBest ? 'box-shadow:0 0 0 3px #f59e0b, 0 6px 20px rgba(0,0,0,.08);' : ''}">
+        ${isBest ? `<div style="position:absolute; top:-12px; inset-inline-start:16px; background:#f59e0b; color:white; padding:3px 12px; border-radius:12px; font-size:11px; font-weight:800;">⭐ ${lang === 'ar' ? 'الأنسب لك — أسرع وصول' : 'Best for you — fastest overall'}</div>` : ''}
         <div class="arrival-bus-circle" style="background:${routeColor}">${busNumber(b.name)}</div>
         <div class="arrival-info">
           <div class="route-name">${routeName}</div>
