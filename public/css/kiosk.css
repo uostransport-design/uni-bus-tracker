@@ -68,10 +68,7 @@ body { font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif; background: 
 
 .list-panel { padding: 24px 30px; overflow-y: auto; background: #ffffff; }
 .arrivals-list { display: flex; flex-direction: column; gap: 16px; }
-.arrival-card {
-  background: white; border-radius: 18px; padding: 20px 24px; display: flex; align-items: center; gap: 18px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.06); border: 1px solid #f0f0f0; border-inline-start: 8px solid var(--brand);
-}
+.arrival-card { position: relative; background: white; border-radius: 18px; padding: 20px 24px; display: flex; align-items: center; gap: 18px; box-shadow: 0 4px 16px rgba(0,0,0,.06); border: 1px solid #f0f0f0; border-inline-start: 8px solid var(--brand); margin-top: 14px; }
 .arrival-bus-circle {
   width: 54px; height: 54px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
   color: white; font-weight: 800; font-size: 18px; background: var(--ink); box-shadow: 0 4px 12px rgba(0,0,0,.15);
