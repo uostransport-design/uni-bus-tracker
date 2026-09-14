@@ -158,7 +158,8 @@ const STATION_PIN_SVG = '<svg viewBox="0 0 24 24" fill="white"><path d="M12 2C8.
 /* ---------------- الخريطة المصغّرة ---------------- */
 function ensureMiniMap() {
   if (miniMap) return miniMap;
-  miniMap = L.map('mini-map', { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, tap: false });
+   miniMap = L.map('mini-map', { zoomControl: false, attributionControl: false, dragging: true, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, tap: true });
+  miniMap.on('dragstart', () => { userInteractedWithMap = true; });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
   return miniMap;
 }
