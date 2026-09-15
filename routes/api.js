@@ -214,7 +214,7 @@ router.get('/stations/:originStationId/to-building/:destId/arrivals', (req, res)
   const enriched = candidateBuses.map((b) => {
     const route = routesWithGeometry.find((r) => r.id === b.route_id);
     const { device_key, ...safe } = b;
-    const _etaSeconds = computeEtaAlongRoute(b, b.route_id, destStation.id);
+    const _etaSeconds = computeEtaAlongRoute(b, b.route_id, originStation.id);
     return { ...safe, route: route || null, _etaSeconds };
   });
 
