@@ -23,7 +23,7 @@ let currentDestId = null;
 let currentDestName = '';
 let miniMap = null;
 let miniMapMarkers = [];
-let userInteractedWithMap = false;
+
 function busNumber(name) { const m = (name || '').match(/(\d+)/); return m ? m[1] : '•'; }
 function getHomeStationId() { return testOverrideStationId || localStorage.getItem(HOME_STATION_KEY); }
 let testOverrideStationId = null;
@@ -158,8 +158,7 @@ const STATION_PIN_SVG = '<svg viewBox="0 0 24 24" fill="white"><path d="M12 2C8.
 /* ---------------- الخريطة المصغّرة ---------------- */
 function ensureMiniMap() {
   if (miniMap) return miniMap;
-   miniMap = L.map('mini-map', { zoomControl: false, attributionControl: false, dragging: true, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, tap: true });
-  miniMap.on('dragstart', () => { userInteractedWithMap = true; });
+  miniMap = L.map('mini-map', { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, tap: false });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
   return miniMap;
 }
@@ -174,17 +173,25 @@ function updateMiniMap(originStation, destStation, relevantRoute, destBuilding, 
     // مناطق التكبير: بس نقطة الانطلاق والوجهة ومسار الرحلة (مو كل الحافلات، حتى ما يتوسّع الزوم بلا داعي)
     const focusBounds = [];
 
-        // خط المسار المرتبط برحلتك تحديدًا (من محطتك للمبنى المطلوب) — بس هذا الخط، بدون باقي مسارات الجامعة
+    // خط المسار المرتبط برحلتك تحديدًا (من محطتك للمبنى المطلوب) — بس هذا الخط، بدون باقي مسارات الجامعة
     if (relevantRoute && Array.isArray(relevantRoute.geometry) && relevantRoute.geometry.length > 1) {
       const validPoints = relevantRoute.geometry.filter((p) =>
         Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number' && !isNaN(p[0]) && !isNaN(p[1])
       );
       if (validPoints.length > 1) {
-        const line = L.polyline(validPoints, { color: relevantRoute.color || '#2563eb', weight: 3, opacity: 0.85 }).addTo(map);
+        const line = L.polyline(validPoints, { color: relevantRoute.color || '#2563eb', weight: 3, opacity: 0.75 }).addTo(map);
         miniMapMarkers.push(line);
         validPoints.forEach((p) => focusBounds.push(p));
       }
     }
+
+    // بس الحافلات اللي فعليًا توصل لهذي الوجهة (مو كل حافلات الجامعة) — تفاديًا لتشتيت الطالبة
+    relevantBuses.forEach((b) => {
+      if (b.current_lat == null || b.current_lng == null) return;
+      const color = (b.route && b.route.color) || '#2eb386';
+      const busIcon = L.divIcon({ className: '', html: `<div style="background:${color};width:24px;height:24px;border-radius:50%;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px;color:white;font-weight:800">🚌</div>`, iconSize: [24, 24] });
+      miniMapMarkers.push(L.marker([b.current_lat, b.current_lng], { icon: busIcon }).addTo(map));
+    });
 
     // محطة الانطلاق (كبينة الانتظار) — تظهر بكبسولة "أنا هنا" واضحة بدل أيقونة محطة عادية
     if (originStation) {
@@ -225,10 +232,8 @@ function updateMiniMap(originStation, destStation, relevantRoute, destBuilding, 
       focusBounds.push([destBuilding.lat, destBuilding.lng]);
     }
 
-        if (!userInteractedWithMap) {
-      if (focusBounds.length > 1) map.fitBounds(L.latLngBounds(focusBounds), { padding: [40, 40], maxZoom: 17 });
-      else if (focusBounds.length === 1) map.setView(focusBounds[0], 17);
-    }
+    if (focusBounds.length > 1) map.fitBounds(L.latLngBounds(focusBounds), { padding: [40, 40], maxZoom: 15 });
+    else if (focusBounds.length === 1) map.setView(focusBounds[0], 15);
 
     setTimeout(() => map.invalidateSize(), 100);
   } catch (e) {
@@ -253,7 +258,7 @@ async function loadArrivals(destId, destName) {
 
   allRoutesCache = await fetch('/api/routes').then((r) => r.json());
 
-   const relevantRoute = (data.buses && data.buses[0] && data.buses[0].route) || (data.routes && data.routes[0]) || null;
+  const relevantRoute = data.buses && data.buses[0] ? data.buses[0].route : null;
   const destBuilding = buildingsCache.find((b) => b.id === destId);
   updateMiniMap(data.originStation, data.destStation, relevantRoute, destBuilding, data.buses);
 
