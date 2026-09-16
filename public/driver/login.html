@@ -46,9 +46,9 @@
       const errorEl = document.getElementById('error');
       errorEl.style.display = 'none';
       try {
-        const res = await fetch('/api/auth/login', {
+                const res = await fetch('/api/auth/login', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('password').value }),
+          body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('password').value, loginContext: 'driver' }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || t().loginFailed);
