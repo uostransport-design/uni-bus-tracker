@@ -1,1 +1,21 @@
-
+{
+  "name": "شاشة تتبع حافلات جامعة الشارقة",
+  "short_name": "حافلات UOS",
+  "description": "شاشة اللمس التفاعلية لتتبع مواعيد وصول حافلات جامعة الشارقة",
+  "start_url": "/kiosk.html",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#ffffff",
+  "theme_color": "#00C389",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "/assets/logo-icon-only-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
