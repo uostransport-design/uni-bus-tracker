@@ -1,1 +1,21 @@
-
+{
+  "name": "تطبيق سائق حافلات جامعة الشارقة",
+  "short_name": "سائق UOS",
+  "description": "تطبيق مشاركة الموقع الحي لسائقي حافلات جامعة الشارقة",
+  "start_url": "/driver/login.html",
+  "scope": "/driver/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#145c46",
+  "theme_color": "#00C389",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "/assets/logo-icon-only-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
