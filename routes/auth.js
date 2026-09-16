@@ -3,7 +3,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
-const { requireAuth, JWT_SECRET, SESSION_HOURS, rateLimit } = require('../middleware/auth');
+const { requireAuth, JWT_SECRET, SESSION_HOURS, rateLimit, checkAccountLock, recordFailedLogin, clearFailedLogins } = require('../middleware/auth');
 const { logAction } = require('../middleware/audit');
 
 const router = express.Router();
@@ -12,11 +12,27 @@ router.post('/login', rateLimit({ windowMs: 60000, max: 10 }), (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'البريد وكلمة المرور مطلوبان' });
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.trim().toLowerCase());
-  if (!user) return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // حماية إضافية: قفل مؤقت للحساب المستهدف نفسه بعد 5 محاولات فاشلة خلال 15 دقيقة،
+  // بغض النظر عن عنوان IP المستخدم (يمنع التحايل بتبديل الشبكة/VPN)
+  if (checkAccountLock(normalizedEmail)) {
+    return res.status(429).json({ error: 'تم إيقاف الدخول لهذا الحساب مؤقتًا بسبب محاولات فاشلة متكررة. حاول بعد 15 دقيقة.' });
+  }
+
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(normalizedEmail);
+  if (!user) {
+    recordFailedLogin(normalizedEmail);
+    return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+  }
 
   const ok = bcrypt.compareSync(password, user.password_hash);
-  if (!ok) return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+  if (!ok) {
+    recordFailedLogin(normalizedEmail);
+    return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+  }
+
+  clearFailedLogins(normalizedEmail);
 
   const token = jwt.sign(
     { id: user.id, name: user.name, email: user.email, role: user.role },
