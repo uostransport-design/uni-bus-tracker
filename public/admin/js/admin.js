@@ -11,6 +11,14 @@ const token = localStorage.getItem('bus_admin_token');
 const currentUser = JSON.parse(localStorage.getItem('bus_admin_user') || 'null');
 if (!token || !currentUser) window.location.href = '/admin/login.html';
 
+// حماية صلاحيات: حساب السائق مخصص لتطبيق السائق فقط، ما له علاقة بلوحة الإدارة إطلاقًا
+if (currentUser.role === 'driver') {
+  localStorage.removeItem('bus_admin_token');
+  localStorage.removeItem('bus_admin_user');
+  alert('هذا الحساب مخصص لتطبيق السائق. الرجاء الدخول من صفحة السائقين.');
+  window.location.href = '/driver/login.html';
+}
+
 document.getElementById('user-name').textContent = currentUser.name;
 document.getElementById('user-role').textContent = t().admin.roleLabels[currentUser.role] || currentUser.role;
 if (currentUser.role !== 'super_admin') { document.getElementById('nav-users').style.display = 'none'; document.getElementById('nav-audit').style.display = 'none'; }
