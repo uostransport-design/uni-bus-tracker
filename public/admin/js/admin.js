@@ -39,6 +39,18 @@ document.getElementById('change-pw-btn').addEventListener('click', async () => {
 
 const canEdit = ['super_admin', 'transport_manager', 'dispatcher'].includes(currentUser.role);
 
+/* ---------------- حماية أمنية: تنقية أي نص يُعرض بالصفحة من كود HTML/JavaScript ضار ---------------- */
+/* تُستخدم إلزاميًا مع أي نص واصل من مصدر عام غير موثوق (زي ملاحظات شاشة اللمس العامة أو تطبيق السائق) */
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 async function api(path, opts = {}) {
   const res = await fetch('/api/admin' + path, { ...opts, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token, ...(opts.headers || {}) } });
   if (res.status === 401) { localStorage.removeItem('bus_admin_token'); window.location.href = '/admin/login.html'; return; }
@@ -92,11 +104,11 @@ async function loadVehicles() {
     ${vehicles.map((v) => {
       const routeName = lang === 'ar' ? v.route_name_ar : v.route_name_en;
       return `<tr>
-      <td>${v.name}</td><td>${v.plate_number || '—'}</td><td>${v.bus_type}</td><td>${v.seats}</td>
-      <td>${routeName || '—'}</td><td>${v.driver_name || '—'}</td>
+      <td>${escapeHtml(v.name)}</td><td>${escapeHtml(v.plate_number) || '—'}</td><td>${escapeHtml(v.bus_type)}</td><td>${v.seats}</td>
+      <td>${escapeHtml(routeName) || '—'}</td><td>${escapeHtml(v.driver_name) || '—'}</td>
       <td><span class="badge ${v.status === 'in_service' || v.status === 'approaching' || v.status === 'at_station' ? 'active' : v.status === 'emergency' ? 'inactive' : 'maintenance'}">${statusLabel(v.status)}</span></td>
       <td><span class="badge ${v.connectivity}">${v.connectivity === 'online' ? a.online : a.offlineStatus}</span></td>
-      <td style="direction:ltr; font-family:monospace; font-size:12px">${v.device_key}</td>
+      <td style="direction:ltr; font-family:monospace; font-size:12px">${escapeHtml(v.device_key)}</td>
       <td>${canEdit ? `<button class="btn-ghost" onclick="editVehicle(${v.id})">${t().admin.common.edit}</button><button class="btn-danger" onclick="deleteVehicle(${v.id})">${t().admin.common.delete}</button>` : ''}</td>
     </tr>`; }).join('')}</tbody></table>`;
 }
@@ -158,7 +170,7 @@ async function loadStations() {
   const el = document.getElementById('table-stations');
   if (!stations.length) { el.innerHTML = `<div class="empty">${a.empty}</div>`; return; }
   el.innerHTML = `<table><thead><tr><th>${a.code}</th><th>${a.nameAr}</th><th>${a.nameEn}</th><th>${a.lat}</th><th>${a.lng}</th><th></th></tr></thead><tbody>
-    ${stations.map((s) => `<tr><td>${s.code || '—'}</td><td>${s.name_ar}</td><td>${s.name_en}</td><td>${s.lat}</td><td>${s.lng}</td>
+    ${stations.map((s) => `<tr><td>${escapeHtml(s.code) || '—'}</td><td>${escapeHtml(s.name_ar)}</td><td>${escapeHtml(s.name_en)}</td><td>${s.lat}</td><td>${s.lng}</td>
       <td>${canEdit ? `<button class="btn-ghost" onclick="editStation(${s.id})">${t().admin.common.edit}</button><button class="btn-danger" onclick="deleteStation(${s.id})">${t().admin.common.delete}</button>` : ''}</td></tr>`).join('')}</tbody></table>`;
 }
 let stationsCache = [];
@@ -210,10 +222,10 @@ async function loadRoutes() {
   const el = document.getElementById('routes-list');
   if (!routes.length) { el.innerHTML = `<div class="empty">${a.empty}</div>`; return; }
   el.innerHTML = routes.map((r) => `<div class="route-card">
-      <div class="route-title"><strong style="color:${r.color}">● ${lang === 'ar' ? r.name_ar : r.name_en}</strong>
+      <div class="route-title"><strong style="color:${r.color}">● ${escapeHtml(lang === 'ar' ? r.name_ar : r.name_en)}</strong>
         ${canEdit ? `<div><button class="btn-ghost" onclick="editRoute(${r.id})">${a.editBtn}</button><button class="btn-ghost" onclick="addStationToRoute(${r.id})">${a.addStation}</button><button class="btn-ghost" onclick="window.location.href='route-editor.html?route=${r.id}'">${a.manualDraw}</button><button class="btn-danger" onclick="deleteRoute(${r.id})">${a.deleteRoute}</button></div>` : ''}</div>
       <table><thead><tr><th>${a.sequence}</th><th>${a.station}</th><th></th></tr></thead><tbody>
-        ${r.stations.map((s) => `<tr><td>${s.sequence}</td><td>${lang === 'ar' ? s.name_ar : s.name_en}</td>
+        ${r.stations.map((s) => `<tr><td>${s.sequence}</td><td>${escapeHtml(lang === 'ar' ? s.name_ar : s.name_en)}</td>
           <td>${canEdit ? `<button class="btn-danger" onclick="removeStationFromRoute(${r.id}, ${s.id})">${a.remove}</button>` : ''}</td></tr>`).join('') || `<tr><td colspan="3" class="empty">${a.emptyStations}</td></tr>`}
       </tbody></table></div>`).join('');
 }
@@ -275,7 +287,7 @@ async function loadDrivers() {
   const el = document.getElementById('table-drivers');
   if (!drivers.length) { el.innerHTML = `<div class="empty">${a.empty}</div>`; return; }
   el.innerHTML = `<table><thead><tr><th>${t().admin.common.name}</th><th>${a.phone}</th><th>${a.license}</th><th>${a.status}</th><th></th></tr></thead><tbody>
-    ${drivers.map((d) => `<tr><td>${d.name}</td><td>${d.phone || '—'}</td><td>${d.license_number || '—'}</td>
+    ${drivers.map((d) => `<tr><td>${escapeHtml(d.name)}</td><td>${escapeHtml(d.phone) || '—'}</td><td>${escapeHtml(d.license_number) || '—'}</td>
       <td><span class="badge ${d.status === 'active' ? 'active' : 'inactive'}">${d.status === 'active' ? a.statusActive : a.statusInactive}</span></td>
       <td>${canEdit ? `<button class="btn-ghost" onclick="editDriver(${d.id})">${t().admin.common.edit}</button><button class="btn-danger" onclick="deleteDriver(${d.id})">${t().admin.common.delete}</button>` : ''}</td></tr>`).join('')}</tbody></table>`;
 }
@@ -324,7 +336,7 @@ async function loadAlerts() {
   if (!alerts.length) { el.innerHTML = `<div class="empty">${a.empty}</div>`; return; }
   el.innerHTML = `<table><thead><tr><th>${a.bus}</th><th>${a.type}</th><th>${a.message}</th><th>${a.severity}</th><th>${a.time}</th><th></th></tr></thead><tbody>
     ${alerts.map((al) => `<tr>
-      <td>${al.bus_name || '—'}</td><td>${al.type}</td><td>${al.message}</td>
+      <td>${escapeHtml(al.bus_name) || '—'}</td><td>${escapeHtml(al.type)}</td><td>${escapeHtml(al.message)}</td>
       <td><span class="severity-badge ${al.severity}">${al.severity}</span></td>
       <td>${new Date(al.created_at).toLocaleString(getLang() === 'ar' ? 'ar-EG' : 'en-GB')}</td>
       <td>${al.resolved ? a.resolved : (canEdit ? `<button class="btn-ghost" onclick="resolveAlert(${al.id})">${a.resolve}</button>` : a.pending)}</td>
@@ -338,7 +350,7 @@ async function loadAnnouncements() {
   const a = t().admin.announcements;
   const el = document.getElementById('table-announcements');
   el.innerHTML = rows.length ? `<table><thead><tr><th>${a.ar}</th><th>${a.en}</th><th>${a.scope}</th><th>${a.created}</th><th></th></tr></thead><tbody>
-    ${rows.map((an) => `<tr><td>${an.message_ar}</td><td>${an.message_en}</td><td>${an.station_scope === 'all' ? a.allStations : an.station_scope}</td>
+    ${rows.map((an) => `<tr><td>${escapeHtml(an.message_ar)}</td><td>${escapeHtml(an.message_en)}</td><td>${an.station_scope === 'all' ? a.allStations : escapeHtml(an.station_scope)}</td>
       <td>${new Date(an.created_at).toLocaleString(getLang() === 'ar' ? 'ar-EG' : 'en-GB')}</td>
       <td>${canEdit ? `<button class="btn-danger" onclick="deleteAnnouncement(${an.id})">${t().admin.common.delete}</button>` : ''}</td></tr>`).join('')}</tbody></table>` : `<div class="empty">${a.empty}</div>`;
 }
@@ -366,8 +378,8 @@ async function loadIncidents() {
   const a = t().admin.incidents;
   const el = document.getElementById('table-incidents');
   el.innerHTML = rows.length ? `<table><thead><tr><th>${a.bus}</th><th>${a.driver}</th><th>${a.type}</th><th>${a.notes}</th><th>${a.time}</th><th></th></tr></thead><tbody>
-    ${rows.map((r) => `<tr><td>${r.bus_name || '—'}</td><td>${r.driver_name || '—'}</td><td>${a.types[r.type] || r.type}</td>
-      <td>${r.note || '—'}</td><td>${new Date(r.created_at).toLocaleString(getLang() === 'ar' ? 'ar-EG' : 'en-GB')}</td>
+    ${rows.map((r) => `<tr><td>${escapeHtml(r.bus_name) || '—'}</td><td>${escapeHtml(r.driver_name) || '—'}</td><td>${a.types[r.type] || escapeHtml(r.type)}</td>
+      <td>${escapeHtml(r.note) || '—'}</td><td>${new Date(r.created_at).toLocaleString(getLang() === 'ar' ? 'ar-EG' : 'en-GB')}</td>
       <td>${r.resolved ? '✅' : (canEdit ? `<button class="btn-ghost" onclick="resolveIncident(${r.id})">${a.resolve}</button>` : '⏳')}</td></tr>`).join('')}</tbody></table>` : `<div class="empty">${a.empty}</div>`;
 }
 window.resolveIncident = async (id) => { await api(`/incidents/${id}/resolve`, { method: 'PUT' }); loadIncidents(); };
@@ -380,7 +392,7 @@ async function loadUsers() {
   usersCache = users;
   const a = t().admin.users;
   document.getElementById('table-users').innerHTML = `<table><thead><tr><th>${a.name}</th><th>${a.email}</th><th>${a.role}</th><th></th></tr></thead><tbody>
-    ${users.map((u) => `<tr><td>${u.name}</td><td>${u.email}</td><td>${t().admin.roleLabels[u.role] || u.role}</td>
+    ${users.map((u) => `<tr><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.email)}</td><td>${t().admin.roleLabels[u.role] || escapeHtml(u.role)}</td>
       <td><button class="btn-ghost" onclick="editUser(${u.id})">${t().admin.common.edit}</button>${u.id !== currentUser.id ? `<button class="btn-danger" onclick="deleteUser(${u.id})">${t().admin.common.delete}</button>` : `<span style="color:#94a3b8;font-size:12px">${t().admin.common.yourAccount}</span>`}</td></tr>`).join('')}</tbody></table>`;
 }
 function userFormHtml(u = {}) {
@@ -430,7 +442,7 @@ async function loadAudit() {
   const rows = await api('/audit-logs');
   const a = t().admin.audit;
   document.getElementById('table-audit').innerHTML = `<table><thead><tr><th>${a.user}</th><th>${a.action}</th><th>${a.entity}</th><th>${a.time}</th></tr></thead><tbody>
-    ${rows.map((r) => `<tr><td>${r.user_name}</td><td>${r.action}</td><td>${r.entity || '—'} ${r.entity_id ? '#' + r.entity_id : ''}</td><td>${new Date(r.created_at).toLocaleString(getLang() === 'ar' ? 'ar-EG' : 'en-GB')}</td></tr>`).join('')}</tbody></table>`;
+    ${rows.map((r) => `<tr><td>${escapeHtml(r.user_name)}</td><td>${escapeHtml(r.action)}</td><td>${escapeHtml(r.entity) || '—'} ${r.entity_id ? '#' + r.entity_id : ''}</td><td>${new Date(r.created_at).toLocaleString(getLang() === 'ar' ? 'ar-EG' : 'en-GB')}</td></tr>`).join('')}</tbody></table>`;
 }
 
 /* ---------------- التقارير ---------------- */
@@ -445,9 +457,9 @@ async function loadReports() {
     const link = document.createElement('a'); link.href = url; link.download = 'arrivals-report.csv'; link.click();
   };
   document.getElementById('table-summary').innerHTML = `<table><thead><tr><th>${a.bus}</th><th>${a.plate}</th><th>${a.arrivalsToday}</th><th>${a.arrivals7}</th></tr></thead><tbody>
-    ${summary.map((s) => `<tr><td>${s.bus_name}</td><td>${s.plate_number || '—'}</td><td>${s.arrivals_today}</td><td>${s.arrivals_count}</td></tr>`).join('')}</tbody></table>`;
+    ${summary.map((s) => `<tr><td>${escapeHtml(s.bus_name)}</td><td>${escapeHtml(s.plate_number) || '—'}</td><td>${s.arrivals_today}</td><td>${s.arrivals_count}</td></tr>`).join('')}</tbody></table>`;
   document.getElementById('table-arrivals').innerHTML = arrivals.length ? `<table><thead><tr><th>${a.bus}</th><th>${a.plate}</th><th>${a.route}</th><th>${a.station}</th><th>${a.time}</th></tr></thead><tbody>
-    ${arrivals.slice(0, 100).map((ar) => `<tr><td>${ar.bus_name}</td><td>${ar.plate_number || '—'}</td><td>${lang === 'ar' ? (ar.route_ar || '—') : (ar.route_en || '—')}</td><td>${lang === 'ar' ? ar.station_ar : ar.station_en}</td><td>${new Date(ar.arrived_at).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-GB')}</td></tr>`).join('')}</tbody></table>` : `<div class="empty">${a.empty}</div>`;
+    ${arrivals.slice(0, 100).map((ar) => `<tr><td>${escapeHtml(ar.bus_name)}</td><td>${escapeHtml(ar.plate_number) || '—'}</td><td>${escapeHtml(lang === 'ar' ? (ar.route_ar || '—') : (ar.route_en || '—'))}</td><td>${escapeHtml(lang === 'ar' ? ar.station_ar : ar.station_en)}</td><td>${new Date(ar.arrived_at).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-GB')}</td></tr>`).join('')}</tbody></table>` : `<div class="empty">${a.empty}</div>`;
 }
 
 /* ---------------- المباني (الكليات) ---------------- */
@@ -459,7 +471,7 @@ async function loadBuildings() {
   if (!buildings.length) { el.innerHTML = '<div class="empty">لا توجد مباني مضافة بعد</div>'; return; }
   el.innerHTML = `<table><thead><tr><th>الأيقونة</th><th>الاسم عربي</th><th>الاسم إنجليزي</th><th>خط العرض</th><th>خط الطول</th><th></th></tr></thead><tbody>
     ${buildings.map((b) => `<tr>
-      <td style="font-size:20px">${b.icon || '🏛️'}</td><td>${b.name_ar}</td><td>${b.name_en}</td><td>${b.lat}</td><td>${b.lng}</td>
+      <td style="font-size:20px">${b.icon || '🏛️'}</td><td>${escapeHtml(b.name_ar)}</td><td>${escapeHtml(b.name_en)}</td><td>${b.lat}</td><td>${b.lng}</td>
       <td>${canEdit ? `<button class="btn-ghost" onclick="editBuilding(${b.id})">تعديل</button><button class="btn-danger" onclick="deleteBuilding(${b.id})">حذف</button>` : ''}</td>
     </tr>`).join('')}</tbody></table>`;
 }
@@ -521,12 +533,13 @@ async function loadRatingsTab() {
     <div class="stat-card amber"><div class="num">${data.difficultyYesCount} / ${data.difficultyTotalAnswered}</div><div class="label">واجهوا صعوبة بالاستخدام</div></div>
   `;
 
+  // ⚠️ أمان: escapeHtml إلزامية هنا لأن هذا النص يجيك من شاشة اللمس العامة بدون أي تسجيل دخول
   const notesRows = data.recent.filter((r) => r.note && r.note.trim());
   const notesEl = document.getElementById('table-ratings-notes');
   notesEl.innerHTML = notesRows.length
     ? `<table><thead><tr><th>الملاحظة</th><th>الالتزام</th><th>النظافة</th><th>السائق</th><th>التاريخ</th></tr></thead><tbody>
         ${notesRows.map((r) => `<tr>
-          <td>${r.note}</td><td>${r.punctuality ?? '—'}</td><td>${r.cleanliness ?? '—'}</td><td>${r.driver_behavior ?? '—'}</td>
+          <td>${escapeHtml(r.note)}</td><td>${r.punctuality ?? '—'}</td><td>${r.cleanliness ?? '—'}</td><td>${r.driver_behavior ?? '—'}</td>
           <td>${new Date(r.created_at).toLocaleString('ar-EG')}</td>
         </tr>`).join('')}</tbody></table>`
     : '<div class="empty">لا توجد ملاحظات نصية بعد</div>';
