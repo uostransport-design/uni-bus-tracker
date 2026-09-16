@@ -25,6 +25,22 @@ app.use('/api', require('./routes/gps')(io));       // POST /api/gps            
 app.use('/api/driver', require('./routes/driver')(io)); // مسارات تطبيق السائق
 app.use('/api', require('./routes/api'));            // القراءة العامة (شاشات العرض)
 app.use('/api/auth', require('./routes/auth'));      // تسجيل الدخول
+// حماية إضافية بمستوى السيرفر: حساب السائق ممنوع من الوصول لأي نقطة بلوحة الإدارة، حتى لو تجاوز الواجهة
+app.use('/api/admin', (req, res, next) => {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (token) {
+    try {
+      const jwt = require('jsonwebtoken');
+      const { JWT_SECRET } = require('./middleware/auth');
+      const payload = jwt.verify(token, JWT_SECRET);
+      if (payload.role === 'driver') {
+        return res.status(403).json({ error: 'هذا الحساب مخصص لتطبيق السائق، لا يملك صلاحية الوصول للوحة الإدارة' });
+      }
+    } catch (e) { /* التوكن غير الصالح يُترك للتحقق الكامل بالراوتر التالي */ }
+  }
+  next();
+});
 app.use('/api/admin', require('./routes/admin'));    // لوحة الإدارة (محمية)
 
 io.on('connection', (socket) => console.log('شاشة/لوحة متصلة:', socket.id));
