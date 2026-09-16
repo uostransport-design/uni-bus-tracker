@@ -7,6 +7,7 @@ const { Server } = require('socket.io');
 const db = require('./db');
 
 const app = express();
+app.set('trust proxy', 1); // Render يمرّر الطلبات عبر بروكسي داخلي — هذا السطر يخلي Express يقرأ عنوان IP الحقيقي للمستخدم بدل عنوان البروكسي
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
