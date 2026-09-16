@@ -31,11 +31,13 @@ router.post('/login', rateLimit({ windowMs: 60000, max: 10 }), (req, res) => {
     return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
   }
 
-    // حساب السائق مخصص لتطبيق السائق فقط، يُرفض هنا مباشرة قبل إصدار أي توكن دخول
-  if (user.role === 'driver') {
+   // كل صفحة دخول مخصصة لنوع حساب معيّن — نرفض أي تطابق غير صحيح قبل إصدار أي توكن
+  if (loginContext === 'staff' && user.role === 'driver') {
     return res.status(403).json({ error: 'هذا الحساب مخصص لتطبيق السائق. الرجاء الدخول من صفحة السائقين.' });
   }
-
+  if (loginContext === 'driver' && user.role !== 'driver') {
+    return res.status(403).json({ error: 'هذا الحساب مخصص لصفحة الموظفين. الرجاء الدخول من هناك.' });
+  }
   clearFailedLogins(normalizedEmail);
 
   const token = jwt.sign(
