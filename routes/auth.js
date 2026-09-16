@@ -9,9 +9,8 @@ const { logAction } = require('../middleware/audit');
 const router = express.Router();
 
 router.post('/login', rateLimit({ windowMs: 60000, max: 10 }), (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, loginContext } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'البريد وكلمة المرور مطلوبان' });
-
   const normalizedEmail = email.trim().toLowerCase();
 
   // حماية إضافية: قفل مؤقت للحساب المستهدف نفسه بعد 5 محاولات فاشلة خلال 15 دقيقة،
